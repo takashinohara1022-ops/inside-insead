@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { getPaginationContext } from "../constants/navigationConfig";
+import { NAVIGATION_CONFIG, getPaginationContext } from "../constants/navigationConfig";
 
 const TOP_LINK_CLASS =
   "inline-flex items-center rounded px-2 py-2 text-sm md:text-base text-[#005543] transition-colors hover:bg-[#005543]/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/30";
@@ -16,25 +16,31 @@ export default function Pagination() {
   const ctx = getPaginationContext(pathname);
   if (!ctx) return null;
 
-  const isAboutTop = ctx.isCategoryTop && ctx.category.path === "/about";
-  const isFinalTop = ctx.isCategoryTop && ctx.isLastCategory;
+  const homeCategory = NAVIGATION_CONFIG.find((category) => category.id === "home");
+  const homePath = homeCategory?.path ?? "/";
+  const firstContentCategory = NAVIGATION_CONFIG.find(
+    (category) => category.id !== "home",
+  );
+
+  const isFirstCategoryTop =
+    ctx.isCategoryTop && firstContentCategory?.path === ctx.category.path;
   const isFinalLeaf = !ctx.isCategoryTop && ctx.isLastCategory && ctx.isLastChild;
 
-  const showTopPrev = ctx.prevPage && !(ctx.isCategoryTop ? isAboutTop : ctx.isFirstChild);
-  const showTopNext = ctx.nextPage && !(ctx.isCategoryTop ? isFinalTop : isFinalLeaf);
+  const showTopPrev = Boolean(ctx.prevPage && !isFirstCategoryTop);
+  const showTopNext = Boolean(ctx.nextPage && !isFinalLeaf);
 
   const leftBottomHref = ctx.isCategoryTop
-    ? isAboutTop
-      ? "/"
-      : (ctx.prevCategoryTop?.path ?? "/")
+    ? isFirstCategoryTop
+      ? homePath
+      : (ctx.prevCategoryTop?.path ?? homePath)
     : ctx.category.path;
   const leftBottomLabel = ctx.isCategoryTop
-    ? isAboutTop
+    ? isFirstCategoryTop
       ? "<< ホーム画面へ"
       : "<< 前カテゴリートップへ"
     : "<< 本カテゴリートップへ";
 
-  const rightBottomHref = ctx.nextCategoryTop?.path ?? (ctx.isLastCategory ? "/" : null);
+  const rightBottomHref = ctx.nextCategoryTop?.path ?? (ctx.isLastCategory ? homePath : null);
   const rightBottomLabel =
     ctx.nextCategoryTop ? "次カテゴリートップへ >>" : "ホーム画面へ >>";
 
@@ -44,7 +50,7 @@ export default function Pagination() {
       aria-label="ページ送りナビゲーション"
     >
       {/* 上段 */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0 flex-1 basis-0">
           {showTopPrev && ctx.prevPage ? (
             <Link href={ctx.prevPage.path} className={TOP_LINK_CLASS}>
@@ -75,7 +81,7 @@ export default function Pagination() {
       </div>
 
       {/* 下段 */}
-      <div className="mt-6 flex flex-col gap-3 border-t border-neutral-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-6">
         <div className="min-w-0 flex-1 basis-0">
           <Link href={leftBottomHref} className={BOTTOM_LINK_CLASS}>
             {leftBottomLabel}

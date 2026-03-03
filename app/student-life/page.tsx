@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCategoryByPath } from "../../constants/navigationConfig";
+import { STUDENT_LIFE_SECTIONS } from "../../constants/student-life-content";
 import { PageHero } from "../_components/PageHero";
 import Pagination from "../../components/Pagination";
 
@@ -9,6 +10,18 @@ const HERO_IMAGE_URL =
 const SECTION_HEADING_CLASS =
   "text-lg font-semibold tracking-tight text-slate-900 sm:text-xl transition-colors hover:text-[#005543]";
 const BODY_TEXT_CLASS = "leading-relaxed text-slate-600 sm:text-[15px]";
+
+function excerptFromBody(body: string, maxChars = 160): string {
+  const normalized = body.replace(/\s+/g, " ").trim();
+  return normalized.length > maxChars
+    ? `${normalized.slice(0, maxChars).trim()}...`
+    : normalized;
+}
+
+function getStudentLifeExcerpt(path: string): string {
+  const section = STUDENT_LIFE_SECTIONS.find((s) => s.href === path);
+  return section ? excerptFromBody(section.body, 160) : "";
+}
 
 export default function StudentLifePage() {
   const category = getCategoryByPath("/student-life");
@@ -35,7 +48,9 @@ export default function StudentLifePage() {
                     {page.title}
                   </Link>
                 </h2>
-                <p className={`${BODY_TEXT_CLASS} line-clamp-3`}>{page.description}</p>
+                <p className={`${BODY_TEXT_CLASS} line-clamp-3`}>
+                  {getStudentLifeExcerpt(page.path)}
+                </p>
                 <Link
                   href={page.path}
                   className="mt-3 inline-block text-sm font-medium text-[#005543] transition-colors hover:underline"

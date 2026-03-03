@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCategoryByPath } from "../../constants/navigationConfig";
+import { ABOUT_SECTIONS } from "../../constants/about-content";
 import { PageHero } from "../_components/PageHero";
 import Pagination from "../../components/Pagination";
 
@@ -10,6 +11,18 @@ const SECTION_HEADING_CLASS =
   "text-lg font-semibold tracking-tight text-slate-900 sm:text-xl transition-colors hover:text-[#005543]";
 
 const BODY_TEXT_CLASS = "leading-relaxed text-slate-600 sm:text-[15px]";
+
+function excerptFromBody(body: string, maxChars = 160): string {
+  const normalized = body.replace(/\s+/g, " ").trim();
+  return normalized.length > maxChars
+    ? `${normalized.slice(0, maxChars).trim()}...`
+    : normalized;
+}
+
+function getAboutExcerpt(path: string): string {
+  const section = ABOUT_SECTIONS.find((s) => s.href === path);
+  return section ? excerptFromBody(section.body, 160) : "";
+}
 
 export default function AboutOverviewPage() {
   const category = getCategoryByPath("/about");
@@ -36,7 +49,9 @@ export default function AboutOverviewPage() {
                     {page.title}
                   </Link>
                 </h2>
-                <p className={`${BODY_TEXT_CLASS} line-clamp-3`}>{page.description}</p>
+                <p className={`${BODY_TEXT_CLASS} line-clamp-3`}>
+                  {getAboutExcerpt(page.path)}
+                </p>
                 <Link
                   href={page.path}
                   className="mt-3 inline-block text-sm font-medium text-[#005543] transition-colors hover:underline"
