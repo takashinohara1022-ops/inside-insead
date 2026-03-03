@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, ExternalLink, Menu, X } from "lucide-react";
 import { NAVIGATION_CONFIG, type NavCategory } from "../../constants/navigationConfig";
 
@@ -94,7 +95,15 @@ function DrawerNavList({ onNavigate }: { onNavigate?: () => void }) {
 
 export function Header() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const coffeeChatCategory = CATEGORIES.find((category) => category.path === "/coffee-chat");
+  const coffeeChatHref = coffeeChatCategory?.path ?? "/coffee-chat";
+  const coffeeChatLabel = coffeeChatCategory?.label ?? "コーヒーチャット申込";
+  const [mounted, setMounted] = useState(false);
   const closeDrawer = () => setDrawerOpen(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -106,8 +115,9 @@ export function Header() {
   }, [drawerOpen]);
 
   return (
-    <header className="sticky top-0 z-[1000] relative border-b border-neutral-200 bg-white/95 backdrop-blur-sm overflow-x-hidden md:overflow-visible">
-      <div className="mx-auto max-w-6xl px-4 py-3 md:px-6 lg:px-8 lg:py-3.5">
+    <>
+      <header className="sticky top-0 z-[1000] relative border-b border-neutral-200 bg-white/95 backdrop-blur-sm overflow-x-hidden md:overflow-visible">
+        <div className="mx-auto max-w-6xl px-4 py-3 md:px-6 lg:px-8 lg:py-3.5">
         {/* Mobile */}
         <div className="flex min-w-0 items-center justify-between gap-3 md:hidden">
           <button
@@ -134,7 +144,7 @@ export function Header() {
         </div>
 
         {/* Desktop / Tablet */}
-        <div className="hidden min-w-0 items-start gap-4 md:flex">
+          <div className="hidden min-w-0 items-start gap-4 md:flex">
           <button
             type="button"
             aria-label="メニューを開く"
@@ -155,18 +165,18 @@ export function Header() {
           </Link>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center justify-between gap-5">
               <Link
                 href="/"
-                className="whitespace-nowrap font-[var(--font-noto-serif-jp)] text-sm font-medium tracking-wide text-slate-600"
+                className="min-w-0 truncate whitespace-nowrap font-[var(--font-noto-serif-jp)] text-sm font-medium tracking-wide text-slate-600"
               >
                 INSEAD日本人サイト(非公式)
               </Link>
               <Link
-                href="/coffee-chat"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#005543] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-[#004435] hover:shadow-lg"
+                href={coffeeChatHref}
+                className="hidden shrink-0 items-center gap-1.5 rounded-full bg-[#005543] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-[#004435] hover:shadow-lg md:inline-flex"
               >
-                <span>コーヒーチャット申込</span>
+                <span>{coffeeChatLabel}</span>
               </Link>
             </div>
 
@@ -183,25 +193,43 @@ export function Header() {
               </a>
             </nav>
           </div>
+          </div>
         </div>
-      </div>
+      </header>
+      <Link
+        href={coffeeChatHref}
+        className="fixed bottom-6 right-6 z-40 inline-flex items-center rounded-full bg-[#005543] px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[#004435] md:hidden"
+      >
+        {coffeeChatLabel}
+      </Link>
+      {mounted ? createPortal(<HeaderDrawer drawerOpen={drawerOpen} closeDrawer={closeDrawer} />, document.body) : null}
+    </>
+  );
+}
 
-      {/* Mobile overlay */}
+function HeaderDrawer({
+  drawerOpen,
+  closeDrawer,
+}: {
+  drawerOpen: boolean;
+  closeDrawer: () => void;
+}) {
+  return (
+    <>
       <div
         role="presentation"
         aria-hidden={!drawerOpen}
         onClick={closeDrawer}
-        className={`fixed inset-0 z-[1100] bg-black/45 transition-opacity duration-300 ease-out ${
+        className={`fixed inset-0 z-[10000] bg-black/55 transition-opacity duration-300 ease-out ${
           drawerOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
 
-      {/* Mobile drawer */}
       <div
         aria-label="メニュー"
         aria-modal="true"
         role="dialog"
-        className={`fixed inset-y-0 left-0 z-[1200] w-[min(280px,85vw)] max-w-[280px] bg-white shadow-xl transition-transform duration-300 ease-out ${
+        className={`fixed inset-y-0 left-0 z-[10001] h-screen w-[min(320px,88vw)] bg-white shadow-2xl transition-transform duration-300 ease-out ${
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -216,11 +244,11 @@ export function Header() {
               <X className="h-5 w-5" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto bg-white">
             <DrawerNavList onNavigate={closeDrawer} />
           </div>
         </div>
       </div>
-    </header>
+    </>
   );
 }
