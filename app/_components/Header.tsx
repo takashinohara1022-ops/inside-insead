@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronDown, ChevronRight, ExternalLink, Menu } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, ChevronRight, ExternalLink, Menu, X } from "lucide-react";
 import { NAV_TREE, type NavNode } from "./navigation";
 
 function hasChildren(node: NavNode) {
@@ -47,15 +50,142 @@ function DropdownList({ items }: { items: NavNode[] }) {
   );
 }
 
+function DrawerNavList({
+  onNavigate,
+}: {
+  onNavigate?: () => void;
+}) {
+  return (
+    <nav className="flex flex-col gap-1 py-2" aria-label="メインメニュー">
+      {NAV_TREE.map((node) => {
+        const isHome = node.href === "/";
+        const hasChildren = (node.children?.length ?? 0) > 0;
+
+        if (isHome) {
+          return (
+            <div key={node.href} className="border-b border-neutral-100 pb-2">
+              <p className="mb-1 px-4 pt-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Home
+              </p>
+              <Link
+                href="/"
+                onClick={onNavigate}
+                className="block px-4 py-2.5 text-sm text-slate-800 hover:bg-neutral-50 hover:text-[#005543]"
+              >
+                トップページ
+              </Link>
+              <Link
+                href="/#class-profile"
+                onClick={onNavigate}
+                className="block px-4 py-2 text-sm text-slate-700 hover:bg-neutral-50 hover:text-[#005543]"
+              >
+                在校生プロフィール内訳 (Class Profile)
+              </Link>
+              <Link
+                href="/#latest-updates"
+                onClick={onNavigate}
+                className="block px-4 py-2 text-sm text-slate-700 hover:bg-neutral-50 hover:text-[#005543]"
+              >
+                最新のアップデート (Latest Updates)
+              </Link>
+              <Link
+                href="/#rankings"
+                onClick={onNavigate}
+                className="block px-4 py-2 text-sm text-slate-700 hover:bg-neutral-50 hover:text-[#005543]"
+              >
+                世界ランキングの実績 (Global Rankings)
+              </Link>
+              <Link
+                href="/#sponsors"
+                onClick={onNavigate}
+                className="block px-4 py-2 text-sm text-slate-700 hover:bg-neutral-50 hover:text-[#005543]"
+              >
+                スポンサー企業
+              </Link>
+            </div>
+          );
+        }
+
+        if (!hasChildren) {
+          return (
+            <Link
+              key={node.href}
+              href={node.href}
+              onClick={onNavigate}
+              className="block px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-neutral-50 hover:text-[#005543]"
+            >
+              {node.label}
+            </Link>
+          );
+        }
+
+        return (
+          <div key={node.href} className="border-b border-neutral-100 pb-2">
+            <Link
+              href={node.href}
+              onClick={onNavigate}
+              className="block px-4 pt-3 pb-1 text-sm font-semibold text-slate-800 hover:text-[#005543]"
+            >
+              {node.label}
+            </Link>
+            <ul className="mt-0.5">
+              {node.children!.map((child) => (
+                <li key={child.label}>
+                  <Link
+                    href={child.href}
+                    onClick={onNavigate}
+                    className="block py-2 pl-6 pr-4 text-sm text-slate-700 hover:bg-neutral-50 hover:text-[#005543]"
+                  >
+                    {child.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+      <a
+        href="#"
+        className="mt-2 flex items-center gap-2 px-4 py-2.5 text-sm text-[#005543] hover:bg-neutral-50"
+      >
+        <ExternalLink className="h-4 w-4" />
+        旧サイト(アーカイブ)
+      </a>
+    </nav>
+  );
+}
+
 export function Header() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const overview = NAV_TREE.find((n) => n.href === "/about");
   const studentLife = NAV_TREE.find((n) => n.href === "/student-life");
   const alumni = NAV_TREE.find((n) => n.href === "/alumni");
 
+  const closeDrawer = () => setDrawerOpen(false);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [drawerOpen]);
+
   return (
-    <header className="sticky top-0 z-50 relative border-b border-neutral-200 bg-white/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 lg:px-8 lg:py-3.5">
-        <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-50 relative border-b border-neutral-200 bg-white/95 backdrop-blur-sm overflow-x-hidden md:overflow-visible">
+      <div className="mx-auto flex max-w-6xl min-w-0 items-center justify-between gap-2 px-4 py-3 md:gap-3 md:px-6 lg:px-8 lg:py-3.5">
+        <div className="flex min-w-0 flex-1 items-center gap-2 md:flex-initial md:gap-3">
+          {/* モバイル用ハンバーガー（md未満のみ表示） */}
+          <button
+            type="button"
+            aria-label="メニューを開く"
+            aria-expanded={drawerOpen}
+            onClick={() => setDrawerOpen(true)}
+            className="md:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white text-slate-700 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
           <div className="hidden lg:block">
             <div className="group">
               <button
@@ -142,7 +272,7 @@ export function Header() {
             </div>
           </div>
 
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex min-w-0 shrink items-center gap-2 md:gap-3">
           <Image
             src="/images/insead-official-logo.png"
             alt="INSEAD"
@@ -150,7 +280,7 @@ export function Header() {
             height={48}
             className="h-10 w-10 object-contain sm:h-12 sm:w-12"
           />
-          <span className="whitespace-nowrap font-[var(--font-noto-serif-jp)] text-xs font-medium tracking-wide text-slate-600 sm:text-[13px]">
+          <span className="truncate font-[var(--font-noto-serif-jp)] text-xs font-medium tracking-wide text-slate-600 sm:text-[13px] md:whitespace-nowrap">
             INSEAD日本人サイト(非公式)
           </span>
         </Link>
@@ -243,10 +373,50 @@ export function Header() {
 
         <Link
           href="/coffee-chat"
-          className="ml-8 shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#005543] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-[#004435] hover:shadow-lg"
+          className="ml-2 shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[#005543] px-3 py-2 text-xs font-semibold text-white shadow-md transition hover:bg-[#004435] hover:shadow-lg md:ml-8 md:px-4 md:text-sm"
         >
-          <span>コーヒーチャット申し込み</span>
+          <span className="hidden md:inline">コーヒーチャット申し込み</span>
+          <span className="md:hidden">申し込み</span>
         </Link>
+      </div>
+
+      {/* モバイル用ドロワー：オーバーレイ */}
+      <div
+        role="presentation"
+        aria-hidden={!drawerOpen}
+        onClick={closeDrawer}
+        className={`fixed inset-0 z-[60] bg-black/50 transition-opacity duration-300 ease-out md:hidden ${
+          drawerOpen
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+      />
+
+      {/* モバイル用ドロワー：パネル */}
+      <div
+        aria-label="メニュー"
+        aria-modal="true"
+        role="dialog"
+        className={`fixed inset-y-0 left-0 z-[70] w-[min(280px,85vw)] max-w-[280px] bg-white shadow-xl transition-transform duration-300 ease-out md:hidden ${
+          drawerOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex h-full flex-col">
+          <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+            <span className="text-sm font-semibold text-slate-800">メニュー</span>
+            <button
+              type="button"
+              aria-label="メニューを閉じる"
+              onClick={closeDrawer}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-600 transition hover:bg-neutral-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <DrawerNavList onNavigate={closeDrawer} />
+          </div>
+        </div>
       </div>
     </header>
   );

@@ -32,8 +32,8 @@ export default function Home() {
     <div className="min-h-screen bg-stone-50 text-slate-900">
       <div className="relative isolate">
         {/* Hero: full-width image with overlay and copy */}
-        <section className="relative w-full" aria-label="ヒーロー">
-          <div className="relative h-[min(70vh,32rem)] w-full overflow-hidden sm:h-[min(72vh,36rem)]">
+        <section className="relative w-full min-w-0 overflow-hidden" aria-label="ヒーロー">
+          <div className="relative h-[min(70vh,32rem)] w-full max-w-[100vw] overflow-hidden sm:h-[min(72vh,36rem)]">
             <Image
               src="/images/hero-fontainebleau.png"
               alt="INSEAD フォンテンブローキャンパス"
@@ -46,8 +46,8 @@ export default function Home() {
               className="absolute inset-0 bg-black/30"
               aria-hidden
             />
-            <div className="absolute inset-0 flex flex-col justify-end px-6 pb-16 pt-24 sm:px-10 sm:pb-20 sm:pt-28 lg:px-14 lg:pb-24 lg:pt-32">
-              <div className="mx-auto w-full max-w-6xl">
+            <div className="absolute inset-0 flex flex-col justify-end px-4 pb-16 pt-24 sm:px-10 sm:pb-20 sm:pt-28 lg:px-14 lg:pb-24 lg:pt-32">
+              <div className="mx-auto w-full max-w-6xl min-w-0">
                 <p
                   className="mb-6 text-[11px] font-medium uppercase tracking-[0.28em] text-white/95 sm:mb-8 sm:text-xs sm:tracking-[0.32em]"
                   style={{
@@ -58,7 +58,7 @@ export default function Home() {
                   INSEAD
                 </p>
                 <h1
-                  className="max-w-4xl text-4xl font-semibold leading-[1.15] tracking-[-0.02em] text-white sm:text-5xl lg:text-6xl lg:tracking-[-0.03em]"
+                  className="max-w-4xl break-words text-4xl font-semibold leading-[1.15] tracking-[-0.02em] text-white sm:text-5xl lg:text-6xl lg:tracking-[-0.03em]"
                   style={{
                     textShadow:
                       "0 2px 4px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.4), 0 0 1px rgba(0,0,0,0.5)",
