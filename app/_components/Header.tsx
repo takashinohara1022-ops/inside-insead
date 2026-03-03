@@ -88,13 +88,6 @@ function DrawerNavList({ onNavigate }: { onNavigate?: () => void }) {
           ) : null}
         </div>
       ))}
-      <a
-        href="#"
-        className="mt-2 flex items-center gap-2 px-4 py-2.5 text-sm text-[#005543] hover:bg-neutral-50"
-      >
-        <ExternalLink className="h-4 w-4" />
-        旧サイト(アーカイブ)
-      </a>
     </nav>
   );
 }
@@ -142,6 +135,15 @@ export function Header() {
 
         {/* Desktop / Tablet */}
         <div className="hidden min-w-0 items-start gap-4 md:flex">
+          <button
+            type="button"
+            aria-label="メニューを開く"
+            aria-expanded={drawerOpen}
+            onClick={() => setDrawerOpen(true)}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white text-slate-700 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
           <Link href="/" className="shrink-0">
             <Image
               src="/images/insead-official-logo.png"
@@ -189,7 +191,7 @@ export function Header() {
         role="presentation"
         aria-hidden={!drawerOpen}
         onClick={closeDrawer}
-        className={`fixed inset-0 z-[1100] bg-black/45 transition-opacity duration-300 ease-out md:hidden ${
+        className={`fixed inset-0 z-[1100] bg-black/45 transition-opacity duration-300 ease-out ${
           drawerOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
@@ -199,13 +201,12 @@ export function Header() {
         aria-label="メニュー"
         aria-modal="true"
         role="dialog"
-        className={`fixed inset-y-0 left-0 z-[1200] w-[min(280px,85vw)] max-w-[280px] bg-white shadow-xl transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed inset-y-0 left-0 z-[1200] w-[min(280px,85vw)] max-w-[280px] bg-white shadow-xl transition-transform duration-300 ease-out ${
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
-            <span className="text-sm font-semibold text-slate-800">メニュー</span>
+          <div className="flex items-center justify-end border-b border-neutral-200 px-4 py-3">
             <button
               type="button"
               aria-label="メニューを閉じる"
