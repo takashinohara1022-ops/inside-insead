@@ -121,6 +121,7 @@ export function GlobalRankingsChart() {
               borderRadius: 8,
               boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
             }}
+            // 修正テスト
             formatter={(value, name) =>
               value != null && typeof value === "number"
                 ? `${LEGEND_LABELS[String(name)] ?? name}: ${value}位`
