@@ -174,15 +174,16 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 relative border-b border-neutral-200 bg-white/95 backdrop-blur-sm overflow-x-hidden md:overflow-visible">
-      <div className="mx-auto flex max-w-6xl min-w-0 items-center justify-between gap-2 px-4 py-3 md:gap-3 md:px-6 lg:px-8 lg:py-3.5">
-        <div className="flex min-w-0 flex-1 items-center gap-2 md:flex-initial md:gap-3">
-          {/* モバイル用ハンバーガー（md未満のみ表示） */}
+      <div className="mx-auto flex max-w-6xl min-w-0 items-center justify-between gap-3 px-4 py-3 md:px-6 lg:px-8 lg:py-3.5">
+        {/* 左側：ハンバーガー（モバイルのみ）＋ メガメニュー（PC lgのみ）＋ ロゴ */}
+        <div className="flex min-w-0 flex-1 items-center gap-3 md:flex-initial">
+          {/* モバイル用ハンバーガー（md未満で表示、md以上で非表示） */}
           <button
             type="button"
             aria-label="メニューを開く"
             aria-expanded={drawerOpen}
             onClick={() => setDrawerOpen(true)}
-            className="md:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white text-slate-700 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white text-slate-700 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40 md:hidden"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -273,20 +274,21 @@ export function Header() {
           </div>
 
           <Link href="/" className="flex min-w-0 shrink items-center gap-2 md:gap-3">
-          <Image
-            src="/images/insead-official-logo.png"
-            alt="INSEAD"
-            width={48}
-            height={48}
-            className="h-10 w-10 object-contain sm:h-12 sm:w-12"
-          />
-          <span className="truncate font-[var(--font-noto-serif-jp)] text-xs font-medium tracking-wide text-slate-600 sm:text-[13px] md:whitespace-nowrap">
-            INSEAD日本人サイト(非公式)
-          </span>
-        </Link>
+            <Image
+              src="/images/insead-official-logo.png"
+              alt="INSEAD"
+              width={48}
+              height={48}
+              className="h-10 w-10 shrink-0 object-contain sm:h-12 sm:w-12"
+            />
+            <span className="truncate font-[var(--font-noto-serif-jp)] text-xs font-medium tracking-wide text-slate-600 sm:text-[13px] md:whitespace-nowrap">
+              INSEAD日本人サイト(非公式)
+            </span>
+          </Link>
         </div>
 
-        <nav className="hidden items-center gap-7 text-[13px] font-medium text-slate-600 lg:flex">
+        {/* PC用ナビ（md未満で非表示、md以上で表示） */}
+        <nav className="hidden items-center gap-7 text-[13px] font-medium text-slate-600 md:flex">
           {NAV_TREE.map((node) => {
             const dropdown = hasChildren(node);
             const isHome = node.href === "/";
@@ -371,12 +373,12 @@ export function Header() {
           </a>
         </nav>
 
+        {/* コーヒーチャット申し込み（md未満では非表示、ドロワー内にリンクあり） */}
         <Link
           href="/coffee-chat"
-          className="ml-2 shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[#005543] px-3 py-2 text-xs font-semibold text-white shadow-md transition hover:bg-[#004435] hover:shadow-lg md:ml-8 md:px-4 md:text-sm"
+          className="hidden shrink-0 items-center gap-1.5 rounded-full bg-[#005543] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-[#004435] hover:shadow-lg md:ml-4 md:inline-flex lg:ml-8"
         >
-          <span className="hidden md:inline">コーヒーチャット申し込み</span>
-          <span className="md:hidden">申し込み</span>
+          <span>コーヒーチャット申し込み</span>
         </Link>
       </div>
 
