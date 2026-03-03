@@ -59,20 +59,28 @@ export const CATEGORY_ORDER: CategoryDef[] = [
 ];
 
 export interface NavigationContext {
-  /** セクション内：前のページ（最初のページでは null） */
-  sectionPrev: NavLink | null;
-  /** セクション内：次のページ（最後のページでは null） */
-  sectionNext: NavLink | null;
-  /** 親（一覧）の path */
+  /** 直前ページ（サイト内順序） */
+  pagePrev: NavLink | null;
+  /** 直後ページ（サイト内順序） */
+  pageNext: NavLink | null;
+  /** 親（カテゴリートップ）の path */
   parentPath: string;
-  /** 親の表示名（「〇〇の一覧へ」に使用） */
+  /** 親カテゴリの表示名 */
   parentLabel: string;
-  /** 前のカテゴリー（概要のときは HOME 用の特別表示）。最初のカテゴリーでは null */
+  /** 前のカテゴリー。最初のカテゴリーでは null */
   categoryPrev: NavLink | null;
   /** 次のカテゴリー。最後のカテゴリーでは null */
   categoryNext: NavLink | null;
-  /** 現在がこのカテゴリーのインデックスページか（子を持ち、自身が path のみで一致） */
-  isIndexPage: boolean;
+  /** 現在ページの表示名 */
+  currentLabel: string;
+  /** 現在がカテゴリートップページか */
+  isCategoryTop: boolean;
+  /** 子ページ内で1枚目か */
+  isFirstChild: boolean;
+  /** 子ページ内で最終か */
+  isLastChild: boolean;
+  /** 最終カテゴリーか */
+  isLastCategory: boolean;
 }
 
 function normalizePath(p: string): string {
@@ -84,16 +92,6 @@ function normalizePath(p: string): string {
  */
 export function getNavigationContext(pathname: string): NavigationContext | null {
   const path = normalizePath(pathname);
-
-  const defaultContext: NavigationContext = {
-    sectionPrev: null,
-    sectionNext: null,
-    parentPath: "/",
-    parentLabel: "HOME",
-    categoryPrev: null,
-    categoryNext: null,
-    isIndexPage: false,
-  };
 
   let categoryIndex = -1;
   let childIndex = -1;
@@ -121,15 +119,9 @@ export function getNavigationContext(pathname: string): NavigationContext | null
   if (categoryIndex < 0 || !category) return null;
 
   const children = category.children ?? [];
-  const isIndexPage = childIndex < 0 && children.length > 0;
-
-  // セクション内の前後
-  let sectionPrev: NavLink | null = null;
-  let sectionNext: NavLink | null = null;
-  if (childIndex >= 0) {
-    if (childIndex > 0) sectionPrev = children[childIndex - 1];
-    if (childIndex < children.length - 1) sectionNext = children[childIndex + 1];
-  }
+  const isCategoryTop = childIndex < 0;
+  const isFirstChild = childIndex === 0;
+  const isLastChild = childIndex >= 0 && childIndex === children.length - 1;
 
   // 親（一覧）は常にカテゴリーの path
   const parentPath = category.path;
@@ -147,13 +139,57 @@ export function getNavigationContext(pathname: string): NavigationContext | null
     categoryNext = { path: nextCat.path, label: nextCat.label };
   }
 
+  const isLastCategory = categoryIndex === CATEGORY_ORDER.length - 1;
+
+  // サイト内ページ順（カテゴリートップ -> 子ページ群）をフラット化
+  const pageFlow: Array<{
+    path: string;
+    label: string;
+    categoryIndex: number;
+    childIndex: number;
+  }> = [];
+  CATEGORY_ORDER.forEach((cat, catIndex) => {
+    pageFlow.push({
+      path: normalizePath(cat.path),
+      label: cat.label,
+      categoryIndex: catIndex,
+      childIndex: -1,
+    });
+    (cat.children ?? []).forEach((child, idx) => {
+      pageFlow.push({
+        path: normalizePath(child.path),
+        label: child.label,
+        categoryIndex: catIndex,
+        childIndex: idx,
+      });
+    });
+  });
+
+  const flowIndex = pageFlow.findIndex((p) => p.path === path);
+  const prevFlow = flowIndex > 0 ? pageFlow[flowIndex - 1] : null;
+  const nextFlow =
+    flowIndex >= 0 && flowIndex < pageFlow.length - 1
+      ? pageFlow[flowIndex + 1]
+      : null;
+
+  const pagePrev = prevFlow
+    ? { path: prevFlow.path, label: prevFlow.label }
+    : null;
+  const pageNext = nextFlow
+    ? { path: nextFlow.path, label: nextFlow.label }
+    : null;
+
   return {
-    sectionPrev,
-    sectionNext,
+    pagePrev,
+    pageNext,
     parentPath,
     parentLabel,
     categoryPrev,
     categoryNext,
-    isIndexPage,
+    currentLabel: isCategoryTop ? category.label : children[childIndex]?.label ?? category.label,
+    isCategoryTop,
+    isFirstChild,
+    isLastChild,
+    isLastCategory,
   };
 }

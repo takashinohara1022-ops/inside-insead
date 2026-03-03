@@ -173,213 +173,149 @@ export function Header() {
   }, [drawerOpen]);
 
   return (
-    <header className="sticky top-0 z-50 relative border-b border-neutral-200 bg-white/95 backdrop-blur-sm overflow-x-hidden md:overflow-visible">
-      <div className="mx-auto flex max-w-6xl min-w-0 items-center justify-between gap-3 px-4 py-3 md:px-6 lg:px-8 lg:py-3.5">
-        {/* 左側：ハンバーガー（モバイルのみ）＋ メガメニュー（PC lgのみ）＋ ロゴ */}
-        <div className="flex min-w-0 flex-1 items-center gap-3 md:flex-initial">
-          {/* モバイル用ハンバーガー（md未満で表示、md以上で非表示） */}
+    <header className="sticky top-0 z-[1000] relative border-b border-neutral-200 bg-white/95 backdrop-blur-sm overflow-x-hidden md:overflow-visible">
+      <div className="mx-auto max-w-6xl px-4 py-3 md:px-6 lg:px-8 lg:py-3.5">
+        {/* Mobile header (md未満) */}
+        <div className="flex min-w-0 items-center justify-between gap-3 md:hidden">
           <button
             type="button"
             aria-label="メニューを開く"
             aria-expanded={drawerOpen}
             onClick={() => setDrawerOpen(true)}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white text-slate-700 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40 md:hidden"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white text-slate-700 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="hidden lg:block">
-            <div className="group">
-              <button
-                type="button"
-                aria-label="サイトメニュー"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-neutral-200 bg-white text-slate-700 shadow-sm transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
-
-              {/* Mega menu */}
-              <div className="pointer-events-none absolute left-0 right-0 top-full mt-2 translate-y-1 rounded-md border border-neutral-200 bg-white p-0 text-slate-800 opacity-0 shadow-lg transition duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                <div className="mx-auto max-w-6xl px-6 py-6 lg:px-8">
-                  <div className="grid gap-8 md:grid-cols-4">
-                    <div className="space-y-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                        Home
-                      </p>
-                      <Link
-                        href="/"
-                        className="inline-flex rounded px-2 py-1.5 text-sm font-medium text-slate-800 transition hover:bg-neutral-50 hover:text-[#005543]"
-                      >
-                        トップページ
-                      </Link>
-                      <Link
-                        href="/#class-profile"
-                        className="block rounded px-2 py-1.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
-                      >
-                        在校生プロフィール内訳 (Class Profile)
-                      </Link>
-                      <Link
-                        href="/#latest-updates"
-                        className="block rounded px-2 py-1.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
-                      >
-                        最新のアップデート (Latest Updates)
-                      </Link>
-                      <Link
-                        href="/#rankings"
-                        className="block rounded px-2 py-1.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
-                      >
-                        世界ランキングの実績 (Global Rankings)
-                      </Link>
-                      <Link
-                        href="/#sponsors"
-                        className="block rounded px-2 py-1.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
-                      >
-                        スポンサー企業
-                      </Link>
-                    </div>
-
-                    <div className="space-y-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                        概要
-                      </p>
-                      {overview?.children ? (
-                        <DropdownList items={overview.children} />
-                      ) : null}
-                    </div>
-
-                    <div className="space-y-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                        学校生活
-                      </p>
-                      {studentLife?.children ? (
-                        <DropdownList items={studentLife.children} />
-                      ) : null}
-                    </div>
-
-                    <div className="space-y-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                        在校生
-                      </p>
-                      {alumni?.children ? (
-                        <DropdownList items={alumni.children} />
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="mt-6 flex items-center justify-between border-t border-neutral-200 pt-4 text-xs text-slate-500">
-                    <span>サイト全体の構造</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <Link href="/" className="flex min-w-0 shrink items-center gap-2 md:gap-3">
+          <Link href="/" className="flex min-w-0 flex-1 items-center gap-2">
             <Image
               src="/images/insead-official-logo.png"
               alt="INSEAD"
               width={48}
               height={48}
-              className="h-10 w-10 shrink-0 object-contain sm:h-12 sm:w-12"
+              className="h-10 w-10 shrink-0 object-contain"
             />
-            <span className="truncate font-[var(--font-noto-serif-jp)] text-xs font-medium tracking-wide text-slate-600 sm:text-[13px] md:whitespace-nowrap">
+            <span className="truncate font-[var(--font-noto-serif-jp)] text-xs font-medium tracking-wide text-slate-600">
               INSEAD日本人サイト(非公式)
             </span>
           </Link>
         </div>
 
-        {/* PC用ナビ（md未満で非表示、md以上で表示） */}
-        <nav className="hidden items-center gap-7 text-[13px] font-medium text-slate-600 md:flex">
-          {NAV_TREE.map((node) => {
-            const dropdown = hasChildren(node);
-            const isHome = node.href === "/";
+        {/* Desktop / Tablet header (md以上): 左ロゴ + 右2段 */}
+        <div className="hidden min-w-0 items-start gap-4 md:flex">
+          {/* 左側: ロゴアイコンのみ */}
+          <Link href="/" className="shrink-0">
+            <Image
+              src="/images/insead-official-logo.png"
+              alt="INSEAD"
+              width={48}
+              height={48}
+              className="h-12 w-12 object-contain"
+            />
+          </Link>
 
-            if (isHome) {
-              return (
-                <div key={node.href} className="group relative">
-                  <Link
-                    href="/"
-                    className="inline-flex items-center gap-1 whitespace-nowrap transition-colors hover:text-[#005543]"
-                  >
-                    <span>{node.label}</span>
-                    <ChevronDown className="h-4 w-4 text-slate-400 transition group-hover:text-[#005543]" />
-                  </Link>
-                  <div className="pointer-events-none absolute left-0 top-[calc(100%+10px)] z-10 w-56 translate-y-1 rounded-lg border border-neutral-200 bg-white py-1 opacity-0 shadow-lg transition duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+          {/* 右側: 上段（サイト名+ボタン）/ 下段（メニュー） */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-4">
+              <Link
+                href="/"
+                className="whitespace-nowrap font-[var(--font-noto-serif-jp)] text-sm font-medium tracking-wide text-slate-600"
+              >
+                INSEAD日本人サイト(非公式)
+              </Link>
+              <Link
+                href="/coffee-chat"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#005543] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-[#004435] hover:shadow-lg"
+              >
+                <span>コーヒーチャット申し込み</span>
+              </Link>
+            </div>
+
+            <nav className="mt-2 flex flex-wrap items-center gap-6 text-[13px] font-medium text-slate-600">
+              {NAV_TREE.map((node) => {
+                const dropdown = hasChildren(node);
+                const isHome = node.href === "/";
+
+                if (isHome) {
+                  return (
+                    <div key={node.href} className="group relative">
+                      <Link
+                        href="/"
+                        className="inline-flex items-center gap-1 whitespace-nowrap transition-colors hover:text-[#005543]"
+                      >
+                        <span>{node.label}</span>
+                        <ChevronDown className="h-4 w-4 text-slate-400 transition group-hover:text-[#005543]" />
+                      </Link>
+                      <div className="pointer-events-none absolute left-0 top-[calc(100%+10px)] z-10 w-56 translate-y-1 rounded-lg border border-neutral-200 bg-white py-1 opacity-0 shadow-lg transition duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                        <Link
+                          href="/#class-profile"
+                          className="block px-4 py-2.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
+                        >
+                          在校生プロフィール内訳 (Class Profile)
+                        </Link>
+                        <Link
+                          href="/#latest-updates"
+                          className="block px-4 py-2.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
+                        >
+                          最新のアップデート (Latest Updates)
+                        </Link>
+                        <Link
+                          href="/#rankings"
+                          className="block px-4 py-2.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
+                        >
+                          世界ランキングの実績 (Global Rankings)
+                        </Link>
+                        <Link
+                          href="/#sponsors"
+                          className="block px-4 py-2.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
+                        >
+                          スポンサー企業
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (!dropdown) {
+                  return (
                     <Link
-                      href="/#class-profile"
-                      className="block px-4 py-2.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
+                      key={node.href}
+                      href={node.href}
+                      className="whitespace-nowrap transition-colors hover:text-[#005543]"
                     >
-                      在校生プロフィール内訳 (Class Profile)
+                      {node.label}
                     </Link>
+                  );
+                }
+
+                return (
+                  <div key={node.href} className="group relative">
                     <Link
-                      href="/#latest-updates"
-                      className="block px-4 py-2.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
+                      href={node.href}
+                      className="inline-flex items-center gap-1 whitespace-nowrap transition-colors hover:text-[#005543]"
                     >
-                      最新のアップデート (Latest Updates)
+                      <span>{node.label}</span>
+                      <ChevronDown className="h-4 w-4 text-slate-400 transition group-hover:text-[#005543]" />
                     </Link>
-                    <Link
-                      href="/#rankings"
-                      className="block px-4 py-2.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
-                    >
-                      世界ランキングの実績 (Global Rankings)
-                    </Link>
-                    <Link
-                      href="/#sponsors"
-                      className="block px-4 py-2.5 text-sm text-slate-700 transition hover:bg-neutral-50 hover:text-[#005543]"
-                    >
-                      スポンサー企業
-                    </Link>
+
+                    <div className="pointer-events-none absolute left-0 top-[calc(100%+10px)] w-80 translate-y-1 rounded-md border border-neutral-200 bg-white p-3 text-slate-800 opacity-0 shadow-lg transition duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                      <p className="px-2 py-1 text-xs font-semibold text-slate-500">
+                        {node.label}
+                      </p>
+                      <DropdownList items={node.children!} />
+                    </div>
                   </div>
-                </div>
-              );
-            }
-
-            if (!dropdown) {
-              return (
-                <Link
-                  key={node.href}
-                  href={node.href}
-                  className="whitespace-nowrap transition-colors hover:text-[#005543]"
-                >
-                  {node.label}
-                </Link>
-              );
-            }
-
-            return (
-              <div key={node.href} className="group relative">
-                <Link
-                  href={node.href}
-                  className="inline-flex items-center gap-1 whitespace-nowrap transition-colors hover:text-[#005543]"
-                >
-                  <span>{node.label}</span>
-                  <ChevronDown className="h-4 w-4 text-slate-400 transition group-hover:text-[#005543]" />
-                </Link>
-
-                <div className="pointer-events-none absolute left-0 top-[calc(100%+10px)] w-80 translate-y-1 rounded-md border border-neutral-200 bg-white p-3 text-slate-800 opacity-0 shadow-lg transition duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                  <p className="px-2 py-1 text-xs font-semibold text-slate-500">
-                    {node.label}
-                  </p>
-                  <DropdownList items={node.children!} />
-                </div>
-              </div>
-            );
-          })}
-          <a
-            href="#"
-            className="flex items-center gap-1.5 whitespace-nowrap text-[#005543] underline-offset-4 transition-colors hover:underline"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            <span>旧サイト(アーカイブ)</span>
-          </a>
-        </nav>
-
-        {/* コーヒーチャット申し込み（md未満では非表示、ドロワー内にリンクあり） */}
-        <Link
-          href="/coffee-chat"
-          className="hidden shrink-0 items-center gap-1.5 rounded-full bg-[#005543] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-[#004435] hover:shadow-lg md:ml-4 md:inline-flex lg:ml-8"
-        >
-          <span>コーヒーチャット申し込み</span>
-        </Link>
+                );
+              })}
+              <a
+                href="#"
+                className="flex items-center gap-1.5 whitespace-nowrap text-[#005543] underline-offset-4 transition-colors hover:underline"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span>旧サイト(アーカイブ)</span>
+              </a>
+            </nav>
+          </div>
+        </div>
       </div>
 
       {/* モバイル用ドロワー：オーバーレイ */}
@@ -387,7 +323,7 @@ export function Header() {
         role="presentation"
         aria-hidden={!drawerOpen}
         onClick={closeDrawer}
-        className={`fixed inset-0 z-[60] bg-black/50 transition-opacity duration-300 ease-out md:hidden ${
+        className={`fixed inset-0 z-[1100] bg-black/45 transition-opacity duration-300 ease-out md:hidden ${
           drawerOpen
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -399,7 +335,7 @@ export function Header() {
         aria-label="メニュー"
         aria-modal="true"
         role="dialog"
-        className={`fixed inset-y-0 left-0 z-[70] w-[min(280px,85vw)] max-w-[280px] bg-white shadow-xl transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed inset-y-0 left-0 z-[1200] w-[min(280px,85vw)] max-w-[280px] bg-white shadow-xl transition-transform duration-300 ease-out md:hidden ${
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

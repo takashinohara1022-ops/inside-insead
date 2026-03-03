@@ -1,122 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   getNavigationContext,
-  type NavigationContext,
 } from "../../constants/navigation-map";
 
 const INSEAD_GREEN = "#005543";
 const CATEGORY_GRAY = "#666666";
 
-/** 1段目：セクション内ナビ（標準サイズ・グリーン） */
-const sectionLinkBase =
-  "inline-flex items-center gap-1 rounded px-2 py-2 text-[15px] tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/30 group";
-
-const sectionLinkClass = `${sectionLinkBase} hover:bg-[#005543]/5`;
-const sectionCenterClass = `${sectionLinkBase} text-[#005543] hover:bg-[#005543]/5`;
-
-/** 2段目：カテゴリーナビ（小さめ・グレー） */
-const categoryLinkBase =
-  "inline-flex items-center gap-1 rounded px-2 py-1.5 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/20";
-const categoryLinkClass = `${categoryLinkBase} hover:bg-neutral-100`;
-
-function SectionNavRow({ ctx }: { ctx: NavigationContext }) {
-  const hasPrev = !!ctx.sectionPrev;
-  const hasNext = !!ctx.sectionNext;
-  const showCenter = true;
-
-  const showRow = hasPrev || hasNext || showCenter;
-  if (!showRow) return null;
-
-  return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
-      <div className="min-w-0 flex-1 basis-0">
-        {hasPrev && ctx.sectionPrev ? (
-          <Link
-            href={ctx.sectionPrev.path}
-            className={`${sectionLinkClass} text-[#005543]`}
-            style={{ color: INSEAD_GREEN }}
-          >
-            <ChevronLeft className="h-4 w-4 shrink-0 transition-transform group-hover:-translate-x-0.5" aria-hidden />
-            <span>&lt; 前のページへ</span>
-          </Link>
-        ) : (
-          <span aria-hidden />
-        )}
-      </div>
-      <div className="order-last w-full flex-shrink-0 sm:order-none sm:w-auto sm:flex-none">
-        <Link
-          href={ctx.parentPath}
-          className={`${sectionCenterClass} justify-center sm:inline-flex`}
-          style={{ color: INSEAD_GREEN }}
-        >
-          {ctx.parentLabel}の一覧へ
-        </Link>
-      </div>
-      <div className="min-w-0 flex-1 basis-0 text-right">
-        {hasNext && ctx.sectionNext ? (
-          <Link
-            href={ctx.sectionNext.path}
-            className={`${sectionLinkClass} ml-auto inline-flex sm:justify-end text-[#005543]`}
-            style={{ color: INSEAD_GREEN }}
-          >
-            <span>次のページ：{ctx.sectionNext.label}へ</span>
-            <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden />
-          </Link>
-        ) : (
-          <span aria-hidden />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function CategoryNavRow({ ctx }: { ctx: NavigationContext }) {
-  const prevLabel =
-    ctx.categoryPrev?.path === "/"
-      ? "HOMEへ"
-      : ctx.categoryPrev
-        ? `前のカテゴリー：${ctx.categoryPrev.label}へ`
-        : null;
-  const hasPrev = !!ctx.categoryPrev;
-  const hasNext = !!ctx.categoryNext;
-
-  if (!hasPrev && !hasNext) return null;
-
-  return (
-    <div className="mt-6 flex flex-col gap-3 border-t border-neutral-100 pt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
-      <div className="min-w-0 flex-1 basis-0">
-        {hasPrev && ctx.categoryPrev ? (
-          <Link
-            href={ctx.categoryPrev.path}
-            className={categoryLinkClass}
-            style={{ color: CATEGORY_GRAY }}
-          >
-            <span className="text-[13px] sm:text-sm">&lt;&lt; {prevLabel}</span>
-          </Link>
-        ) : (
-          <span aria-hidden />
-        )}
-      </div>
-      <div className="min-w-0 flex-1 basis-0 text-right">
-        {hasNext && ctx.categoryNext ? (
-          <Link
-            href={ctx.categoryNext.path}
-            className={`${categoryLinkClass} ml-auto inline-flex sm:justify-end`}
-            style={{ color: CATEGORY_GRAY }}
-          >
-            <span className="text-[13px] sm:text-sm">次のカテゴリー：{ctx.categoryNext.label}へ &gt;&gt;</span>
-          </Link>
-        ) : (
-          <span aria-hidden />
-        )}
-      </div>
-    </div>
-  );
-}
+const mainLinkClass =
+  "inline-flex items-center rounded px-2 py-2 text-sm md:text-base tracking-wide text-[#005543] transition-colors hover:bg-[#005543]/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/30";
+const subLinkClass =
+  "inline-flex items-center rounded px-2 py-1.5 text-sm md:text-base text-[#666666] transition-colors hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/20";
 
 export function PageNavigation() {
   const pathname = usePathname();
@@ -125,23 +20,105 @@ export function PageNavigation() {
 
   if (!ctx) return null;
 
-  const hasSectionNav =
-    ctx.sectionPrev || ctx.sectionNext || ctx.parentPath !== path;
-  const hasCategoryNav = !!ctx.categoryPrev || !!ctx.categoryNext;
+  const isCategoryTop = ctx.isCategoryTop;
 
-  if (!hasSectionNav && !hasCategoryNav) return null;
+  // 上段（前後ページ）表示条件
+  const hideTopPrev =
+    (isCategoryTop && ctx.parentPath === "/about") ||
+    (!isCategoryTop && ctx.isFirstChild);
+  const hideTopNext =
+    (isCategoryTop && ctx.isLastCategory) ||
+    (!isCategoryTop && ctx.isLastCategory && ctx.isLastChild);
+
+  const showTopPrev = !!ctx.pagePrev && !hideTopPrev;
+  const showTopNext = !!ctx.pageNext && !hideTopNext;
+
+  // 下段リンクの文言と遷移先
+  const bottomLeftHref = isCategoryTop
+    ? ctx.parentPath === "/about"
+      ? "/"
+      : (ctx.categoryPrev?.path ?? "/")
+    : ctx.parentPath;
+  const bottomLeftLabel = isCategoryTop
+    ? ctx.parentPath === "/about"
+      ? "<< ホーム画面へ"
+      : "<< 前カテゴリートップへ"
+    : "<< 本カテゴリートップへ";
+
+  const bottomRightHref =
+    ctx.categoryNext?.path ??
+    ((isCategoryTop && ctx.isLastCategory) ||
+    (!isCategoryTop && ctx.isLastCategory && ctx.isLastChild)
+      ? "/"
+      : null);
+  const bottomRightLabel = bottomRightHref
+    ? ctx.categoryNext
+      ? "次カテゴリートップへ >>"
+      : "ホーム画面へ >>"
+    : null;
 
   return (
     <nav
       className="mt-12 border-t border-neutral-200 pt-8"
       aria-label="ページ・カテゴリー間のナビゲーション"
     >
-      {/* 1段目：セクション内ナビ */}
-      {(ctx.sectionPrev || ctx.sectionNext || ctx.parentLabel) && (
-        <SectionNavRow ctx={ctx} />
-      )}
-      {/* 2段目：カテゴリーナビ */}
-      <CategoryNavRow ctx={ctx} />
+      {/* 上段: 前後ページ + 本ページトップ */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 flex-1 basis-0">
+          {showTopPrev && ctx.pagePrev ? (
+            <a href={ctx.pagePrev.path} className={mainLinkClass} style={{ color: INSEAD_GREEN }}>
+              &lt; 前のページへ: {ctx.pagePrev.label}
+            </a>
+          ) : (
+            <span aria-hidden />
+          )}
+        </div>
+        <div className="order-last w-full text-center sm:order-none sm:w-auto sm:flex-none">
+          <button
+            type="button"
+            className={mainLinkClass}
+            style={{ color: INSEAD_GREEN }}
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          >
+            本ページトップへ
+          </button>
+        </div>
+        <div className="min-w-0 flex-1 basis-0 text-right">
+          {showTopNext && ctx.pageNext ? (
+            <a
+              href={ctx.pageNext.path}
+              className={`${mainLinkClass} ml-auto inline-flex`}
+              style={{ color: INSEAD_GREEN }}
+            >
+              次のページへ: {ctx.pageNext.label} &gt;
+            </a>
+          ) : (
+            <span aria-hidden />
+          )}
+        </div>
+      </div>
+
+      {/* 下段: カテゴリー遷移 */}
+      <div className="mt-6 flex flex-col gap-3 border-t border-neutral-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 flex-1 basis-0">
+          <a href={bottomLeftHref} className={subLinkClass} style={{ color: CATEGORY_GRAY }}>
+            {bottomLeftLabel}
+          </a>
+        </div>
+        <div className="min-w-0 flex-1 basis-0 text-right">
+          {bottomRightHref && bottomRightLabel ? (
+            <a
+              href={bottomRightHref}
+              className={`${subLinkClass} ml-auto inline-flex`}
+              style={{ color: CATEGORY_GRAY }}
+            >
+              {bottomRightLabel}
+            </a>
+          ) : (
+            <span aria-hidden />
+          )}
+        </div>
+      </div>
     </nav>
   );
 }
