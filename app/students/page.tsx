@@ -10,15 +10,15 @@ const SECTION_HEADING_CLASS =
   "text-lg font-semibold tracking-tight text-slate-900 sm:text-xl transition-colors hover:text-[#005543]";
 const BODY_TEXT_CLASS = "leading-relaxed text-slate-600 sm:text-[15px]";
 
-export default function StudentLifePage() {
-  const category = getCategoryByPath("/student-life");
+export default function StudentsPage() {
+  const category = getCategoryByPath("/students");
   if (!category) return null;
 
   return (
     <div className="min-h-screen bg-stone-50 text-slate-900">
       <PageHero
         src={HERO_IMAGE_URL}
-        alt="学生が教室やキャンパスで議論・談笑している様子"
+        alt="学生同士がカフェで談笑しているイメージ"
         title={category.label}
       />
 

@@ -1,5 +1,5 @@
 import { PageHero } from "../_components/PageHero";
-import { PageNavigation } from "../_components/PageNavigation";
+import Pagination from "../../components/Pagination";
 
 const HERO_IMAGE_URL =
   "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop";
@@ -16,7 +16,7 @@ export default function GalleryPage() {
         <p className="leading-relaxed text-slate-600 sm:text-[15px]">
           キャンパスや学生生活の写真を掲載予定です。
         </p>
-        <PageNavigation />
+        <Pagination />
       </div>
     </div>
   );

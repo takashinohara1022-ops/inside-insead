@@ -36,54 +36,35 @@ function FooterNodeList({
 
 export function Footer() {
   const home = NAV_TREE.find((n) => n.href === "/");
-  const overview = NAV_TREE.find((n) => n.href === "/about");
-  const studentLife = NAV_TREE.find((n) => n.href === "/student-life");
-  const alumni = NAV_TREE.find((n) => n.href === "/alumni");
+  const primaryCategories = NAV_TREE.filter(
+    (n) => n.href !== "/" && n.href !== "/coffee-chat"
+  );
   const coffeeChat = NAV_TREE.find((n) => n.href === "/coffee-chat");
 
   return (
     <footer className="mt-16 bg-[#005543] text-white">
       <div className="mx-auto max-w-6xl px-6 py-14 lg:px-8 lg:py-16">
         <div className="grid gap-12 md:grid-cols-4">
-          <div className="space-y-4">
-            <Link
-              href="/about"
-              className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-white underline-offset-4 hover:underline"
-            >
-              <span>概要</span>
-            </Link>
-            {overview?.children ? <FooterNodeList items={overview.children} /> : null}
-          </div>
-
-          <div className="space-y-4">
-            <Link
-              href="/student-life"
-              className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-white underline-offset-4 hover:underline"
-            >
-              <span>学校生活</span>
-            </Link>
-            {studentLife?.children ? (
-              <FooterNodeList items={studentLife.children} />
-            ) : null}
-          </div>
-
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <Link
-                href="/alumni"
-                className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-white underline-offset-4 hover:underline"
-              >
-                <span>在校生</span>
-              </Link>
-              {alumni?.children ? <FooterNodeList items={alumni.children} /> : null}
+          <div className="space-y-8 md:col-span-3">
+            <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
+              {primaryCategories.map((category) => (
+                <div key={category.href} className="space-y-4">
+                  <Link
+                    href={category.href}
+                    className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-white underline-offset-4 hover:underline"
+                  >
+                    <span>{category.label}</span>
+                  </Link>
+                  {category.children ? <FooterNodeList items={category.children} /> : null}
+                </div>
+              ))}
             </div>
-
             <div className="space-y-4">
               <Link
                 href={coffeeChat?.href ?? "/coffee-chat"}
                 className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-white underline-offset-4 hover:underline"
               >
-                <span>コーヒーチャット申し込み</span>
+                <span>コーヒーチャット申込</span>
               </Link>
               <ul className="space-y-2">
                 <li>

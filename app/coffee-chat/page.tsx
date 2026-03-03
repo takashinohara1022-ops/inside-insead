@@ -1,5 +1,5 @@
 import { PageHero } from "../_components/PageHero";
-import { PageNavigation } from "../_components/PageNavigation";
+import Pagination from "../../components/Pagination";
 
 const HERO_IMAGE_URL =
   "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop";
@@ -54,7 +54,7 @@ export default function CoffeeChatPage() {
             </p>
           </section>
 
-          <PageNavigation />
+          <Pagination />
         </div>
       </div>
     </div>

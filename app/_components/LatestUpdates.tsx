@@ -10,7 +10,7 @@ const LATEST_UPDATES_DATA = [
       "フォンテンブローでの初学期を終えて。チームワーク、マルチカルチャルな学び、そして家族帯同の実体験をお伝えします。",
     date: "20 Apr 2026",
     batch: "26D",
-    href: "/alumni/blog",
+    href: "/students/blog",
     imageSrc: "/images/hero-chateau.png", // プレースホルダー：差し替え可能
   },
   {
@@ -21,7 +21,7 @@ const LATEST_UPDATES_DATA = [
       "GMAT対策、エッセイ戦略、インタビュー準備。非コンサル・非金融出身での合格までの道のりを振り返ります。",
     date: "12 Apr 2026",
     batch: "26J",
-    href: "/alumni/blog",
+    href: "/students/blog",
     imageSrc: "/images/hero-chateau.png", // プレースホルダー：差し替え可能
   },
   {
@@ -32,7 +32,7 @@ const LATEST_UPDATES_DATA = [
       "P4・P5でシンガポールに滞在。アジアでのネットワーク構築と、日本とは異なるビジネス視点を学んだ体験をまとめました。",
     date: "5 Apr 2026",
     batch: "25J",
-    href: "/alumni/blog",
+    href: "/students/blog",
     imageSrc: "/images/hero-chateau.png", // プレースホルダー：差し替え可能
   },
 ];
@@ -146,7 +146,7 @@ export function LatestUpdates() {
 
       {/* セクション下部CTA */}
       <Link
-        href="/alumni/blog"
+        href="/students/blog"
         className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#005543] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#004435]"
       >
         <span>最新情報をすべて見る</span>

@@ -1,5 +1,5 @@
 import { PageHero } from "../../_components/PageHero";
-import { PageNavigation } from "../../_components/PageNavigation";
+import Pagination from "../../../components/Pagination";
 
 const HERO_IMAGE_URL =
   "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
@@ -76,7 +76,7 @@ export default function AboutHistoryPage() {
           </section>
         </div>
 
-        <PageNavigation />
+        <Pagination />
       </div>
     </div>
   );

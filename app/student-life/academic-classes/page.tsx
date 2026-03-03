@@ -1,6 +1,6 @@
 import { getStudentLifeSection } from "../../../constants/student-life-content";
 import { PageHero } from "../../_components/PageHero";
-import { PageNavigation } from "../../_components/PageNavigation";
+import Pagination from "../../../components/Pagination";
 
 const HERO_IMAGE_URL =
   "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop";
@@ -20,7 +20,7 @@ export default function AcademicClassesPage() {
             <p key={i} className={P_CLASS}>{p}</p>
           ))}
         </div>
-        <PageNavigation />
+        <Pagination />
       </div>
     </div>
   );

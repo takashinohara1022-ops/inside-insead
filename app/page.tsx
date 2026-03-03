@@ -76,7 +76,7 @@ export default function Home() {
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link
-                    href="/alumni"
+                    href="/students"
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-white/80 bg-white/10 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/20"
                   >
                     <Users className="h-4 w-4" />

@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ABOUT_SECTIONS, getExcerpt } from "../../constants/about-content";
+import { getCategoryByPath } from "../../constants/navigationConfig";
 import { PageHero } from "../_components/PageHero";
+import Pagination from "../../components/Pagination";
 
 const HERO_IMAGE_URL =
   "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
@@ -11,32 +12,33 @@ const SECTION_HEADING_CLASS =
 const BODY_TEXT_CLASS = "leading-relaxed text-slate-600 sm:text-[15px]";
 
 export default function AboutOverviewPage() {
+  const category = getCategoryByPath("/about");
+  if (!category) return null;
+
   return (
     <div className="min-h-screen bg-stone-50 text-slate-900">
       <PageHero
         src={HERO_IMAGE_URL}
         alt="フォンテーヌブロー風の歴史的建物"
-        title="概要・キャンパス"
+        title={category.label}
       />
 
       <div className="mx-auto max-w-4xl px-6 py-12 pb-14 sm:px-8 lg:px-12 lg:py-20">
         <div className="space-y-12">
-          {ABOUT_SECTIONS.map((section) => {
-            const excerpt = getExcerpt(section.body, 3);
+          {category.pages.map((page) => {
             return (
               <section
-                key={section.id}
-                id={section.id}
+                key={page.path}
                 className="scroll-mt-20 border-b border-neutral-200 pb-12 last:border-b-0 last:pb-0"
               >
                 <h2 className="mb-4">
-                  <Link href={section.href} className={SECTION_HEADING_CLASS}>
-                    {section.title}
+                  <Link href={page.path} className={SECTION_HEADING_CLASS}>
+                    {page.title}
                   </Link>
                 </h2>
-                <p className={`${BODY_TEXT_CLASS} line-clamp-3`}>{excerpt}</p>
+                <p className={`${BODY_TEXT_CLASS} line-clamp-3`}>{page.description}</p>
                 <Link
-                  href={section.href}
+                  href={page.path}
                   className="mt-3 inline-block text-sm font-medium text-[#005543] transition-colors hover:underline"
                 >
                   ...つづきを見る
@@ -45,6 +47,7 @@ export default function AboutOverviewPage() {
             );
           })}
         </div>
+        <Pagination />
       </div>
     </div>
   );
