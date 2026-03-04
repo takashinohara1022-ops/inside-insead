@@ -11,7 +11,7 @@ const HERO_IMAGE_URL =
 export default function StudentsBlogPage() {
   const category = getCategoryByPath("/students");
   const blogPage = category?.pages.find((page) => page.path === "/students/blog");
-  const title = blogPage?.title ?? "在校生日記";
+  const title = blogPage?.title ?? "在校生ブログ";
 
   return (
     <div className="min-h-screen bg-stone-50 text-slate-900">

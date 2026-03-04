@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
+import { ChevronDown } from "lucide-react";
 
 const CSV_URL =
   "https://docs.google.com/spreadsheets/d/1gGPva62UWo_U0QidDD7oPL1Qgs-NtBLisKgdWIO7FbY/export?format=csv";
@@ -17,6 +18,7 @@ type StudentProfile = {
   id: string;
   initials: string;
   classLabel: string;
+  classRank: number;
   classTag: Tag | null;
   homeCampus: string;
   homeCampusTag: Tag | null;
@@ -41,6 +43,8 @@ type StudentProfile = {
   profileTags: Tag[];
   filterTagKeys: string[];
 };
+
+type AccordionKey = "basic" | "application" | "why" | "message";
 
 function toHalfWidth(value: string): string {
   return value
@@ -107,6 +111,19 @@ function parseClassLabel(yearRaw: string, monthRaw: string): string {
   if (month.includes("july") || month === "j" || month.includes("7")) return `${yy}J`;
   if (month.includes("dec") || month === "d" || month.includes("12")) return `${yy}D`;
   return yy;
+}
+
+function getClassRank(classLabel: string): number {
+  const normalized = normalizeText(classLabel).toUpperCase();
+  const match = normalized.match(/^(\d{2})([JD])$/);
+  if (!match) return -1;
+  const year = Number(match[1]);
+  const monthWeight = match[2] === "D" ? 2 : 1;
+  return year * 10 + monthWeight;
+}
+
+function isClassTagLabel(label: string): boolean {
+  return /^\d{2}[JD]$/i.test(normalizeText(label));
 }
 
 function parseProfiles(csvText: string): StudentProfile[] {
@@ -178,6 +195,7 @@ function parseProfiles(csvText: string): StudentProfile[] {
       id: `${initials || "profile"}-${index}`,
       initials: initials || "N/A",
       classLabel,
+      classRank: getClassRank(classLabel),
       classTag,
       homeCampus: homeCampus || "-",
       homeCampusTag,
@@ -238,21 +256,84 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function AccordionSection({
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between rounded-lg bg-emerald-700 px-4 py-2.5 text-left text-sm font-semibold text-white transition hover:bg-emerald-800"
+      >
+        <span>{title}</span>
+        <span className="inline-flex items-center gap-2">
+          <span className="text-base">{open ? "−" : "+"}</span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : "rotate-0"}`} />
+        </span>
+      </button>
+      {open ? <div className="space-y-4 px-4 py-4">{children}</div> : null}
+    </section>
+  );
+}
+
 function ProfileCard({
   profile,
   selectedTagKeys,
   onTagClick,
+  isLatestClassMember,
 }: {
   profile: StudentProfile;
   selectedTagKeys: string[];
   onTagClick: (tag: Tag) => void;
+  isLatestClassMember: boolean;
 }) {
+  const [accordionState, setAccordionState] = useState<Record<AccordionKey, boolean>>({
+    basic: false,
+    application: false,
+    why: false,
+    message: false,
+  });
+
   const hasTagSelected = (tag: Tag) => selectedTagKeys.includes(tag.key);
+  const toggleAccordion = (key: AccordionKey) => {
+    setAccordionState((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const coffeeChatStudentParam = encodeURIComponent(
+    `${profile.initials}_${profile.classLabel || "NA"}_${profile.careerMajor || "未設定"}`,
+  );
 
   return (
     <article className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3 border-b border-neutral-100 pb-3">
-        <h3 className="text-xl font-semibold tracking-tight text-slate-900">{profile.initials}</h3>
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-100 pb-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <h3 className="text-xl font-semibold tracking-tight text-slate-900">{profile.initials}</h3>
+          <div className="flex flex-wrap gap-1.5">
+            {profile.classTag ? (
+              <TagChip
+                tag={profile.classTag}
+                selected={hasTagSelected(profile.classTag)}
+                onClick={onTagClick}
+              />
+            ) : null}
+            {profile.homeCampusTag ? (
+              <TagChip
+                tag={profile.homeCampusTag}
+                selected={hasTagSelected(profile.homeCampusTag)}
+                onClick={onTagClick}
+              />
+            ) : null}
+          </div>
+        </div>
         <div className="flex flex-wrap justify-end gap-1.5">
           {profile.classTag ? (
             <TagChip
@@ -272,34 +353,21 @@ function ProfileCard({
       </div>
 
       <div className="mt-4 space-y-3">
-        <details className="rounded-md bg-neutral-50 p-3" open>
-          <summary className="cursor-pointer text-sm font-medium text-slate-800">基本情報</summary>
-          <div className="mt-3 space-y-4">
+        <AccordionSection
+          title="基本情報"
+          open={accordionState.basic}
+          onToggle={() => toggleAccordion("basic")}
+        >
+          <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <InfoRow label="Home Campus" value={profile.homeCampus} />
               <InfoRow label="入学時社会人歴(何年目)" value={profile.yearsAtEntry} />
-              <InfoRow label="海外経験(数か月以上の滞在)" value={profile.overseasExperience} />
-              <InfoRow
-                label="利用したMBAアドバイザリーサービス名"
-                value={profile.mbaAdvisoryService}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <InfoRow
-                label="英語試験 / 英語試験スコア"
-                value={`${profile.englishTest} / ${profile.englishTestScore}`}
-              />
-              <InfoRow
-                label="能力試験 / 能力試験スコア"
-                value={`${profile.aptitudeTest} / ${profile.aptitudeTestScore}`}
-              />
+              <InfoRow label="海外経験" value={profile.overseasExperience} />
             </div>
 
             <div className="space-y-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  キャリアバックグラウンド大分類
+                  キャリア大分類
                 </p>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {profile.careerMajorTag ? (
@@ -316,7 +384,7 @@ function ProfileCard({
 
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  キャリアバックグラウンド（複数）
+                  キャリア小分類
                 </p>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {profile.careerBackgrounds.length > 0 ? (
@@ -333,73 +401,74 @@ function ProfileCard({
                   )}
                 </div>
               </div>
+            </div>
 
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                備考（プロフィールハッシュタグ）
+              </p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {profile.profileTags.length > 0 ? (
+                  profile.profileTags.map((tag) => (
+                    <TagChip
+                      key={tag.key}
+                      tag={tag}
+                      selected={hasTagSelected(tag)}
+                      onClick={onTagClick}
+                    />
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-700">-</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </AccordionSection>
+
+        <AccordionSection
+          title="アプリケーション"
+          open={accordionState.application}
+          onToggle={() => toggleAccordion("application")}
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  Why INSEAD? 判断軸カテゴリー
+                  社費 / 私費
                 </p>
                 <div className="mt-1 flex flex-wrap gap-1.5">
-                  {profile.whyCategories.length > 0 ? (
-                    profile.whyCategories.map((tag) => (
-                      <TagChip
-                        key={tag.key}
-                        tag={tag}
-                        selected={hasTagSelected(tag)}
-                        onClick={onTagClick}
-                      />
-                    ))
+                  {profile.sponsorTag ? (
+                    <TagChip
+                      tag={profile.sponsorTag}
+                      selected={hasTagSelected(profile.sponsorTag)}
+                      onClick={onTagClick}
+                    />
                   ) : (
-                    <p className="text-sm text-slate-700">-</p>
+                    <p className="text-sm text-slate-700">{profile.sponsor}</p>
                   )}
                 </div>
               </div>
-
-              {profile.homeCampusTag ? (
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Home Campus (Tag)
-                  </p>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    <TagChip
-                      tag={profile.homeCampusTag}
-                      selected={hasTagSelected(profile.homeCampusTag)}
-                      onClick={onTagClick}
-                    />
-                  </div>
-                </div>
-              ) : null}
-
-              {profile.mbaAdvisoryTag ? (
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    MBAアドバイザリーサービス
-                  </p>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
+              <InfoRow
+                label="英語試験 / 英語試験スコア"
+                value={`${profile.englishTest} / ${profile.englishTestScore}`}
+              />
+              <InfoRow
+                label="能力試験 / 能力試験スコア"
+                value={`${profile.aptitudeTest} / ${profile.aptitudeTestScore}`}
+              />
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  利用したMBAアドバイザリーサービス
+                </p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {profile.mbaAdvisoryTag ? (
                     <TagChip
                       tag={profile.mbaAdvisoryTag}
                       selected={hasTagSelected(profile.mbaAdvisoryTag)}
                       onClick={onTagClick}
                     />
-                  </div>
-                </div>
-              ) : null}
-
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  備考タグ
-                </p>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {profile.profileTags.length > 0 ? (
-                    profile.profileTags.map((tag) => (
-                      <TagChip
-                        key={tag.key}
-                        tag={tag}
-                        selected={hasTagSelected(tag)}
-                        onClick={onTagClick}
-                      />
-                    ))
                   ) : (
-                    <p className="text-sm text-slate-700">-</p>
+                    <p className="text-sm text-slate-700">{profile.mbaAdvisoryService}</p>
                   )}
                 </div>
               </div>
@@ -410,25 +479,57 @@ function ProfileCard({
               <InfoRow label="他MBA合格先" value={profile.otherMbaAccepted} />
             </div>
           </div>
-        </details>
+        </AccordionSection>
 
-        <details className="rounded-md bg-neutral-50 p-3">
-          <summary className="cursor-pointer text-sm font-medium text-slate-800">
-            Why INSEAD？（自由記述）
-          </summary>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-            {profile.whyFreeText}
-          </p>
-        </details>
+        <AccordionSection
+          title="Why INSEAD？"
+          open={accordionState.why}
+          onToggle={() => toggleAccordion("why")}
+        >
+          <div className="space-y-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                重要視した要素：
+              </p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {profile.whyCategories.length > 0 ? (
+                  profile.whyCategories.map((tag) => (
+                    <TagChip
+                      key={tag.key}
+                      tag={tag}
+                      selected={hasTagSelected(tag)}
+                      onClick={onTagClick}
+                    />
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-700">-</p>
+                )}
+              </div>
+            </div>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+              {profile.whyFreeText}
+            </p>
+          </div>
+        </AccordionSection>
 
-        <details className="rounded-md bg-neutral-50 p-3">
-          <summary className="cursor-pointer text-sm font-medium text-slate-800">
-            MBA/INSEADアプリケーションプロセスにおけるアドバイス
-          </summary>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+        <AccordionSection
+          title="応援メッセージ"
+          open={accordionState.message}
+          onToggle={() => toggleAccordion("message")}
+        >
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
             {profile.processAdvice}
           </p>
-        </details>
+        </AccordionSection>
+
+        {isLatestClassMember ? (
+          <a
+            href={`/coffee-chat?student=${coffeeChatStudentParam}`}
+            className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-[#006633] px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-emerald-800"
+          >
+            {profile.initials} とコーヒーチャットをする
+          </a>
+        ) : null}
       </div>
     </article>
   );
@@ -436,10 +537,14 @@ function ProfileCard({
 
 export function StudentsProfilesDirectory() {
   const [profiles, setProfiles] = useState<StudentProfile[]>([]);
-  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [selectedYears, setSelectedYears] = useState<Tag[]>([]);
+  const [selectedOtherTags, setSelectedOtherTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [slideClass, setSlideClass] = useState("translate-x-0 opacity-100");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -452,7 +557,8 @@ export function StudentsProfilesDirectory() {
           throw new Error(`CSVの取得に失敗しました (${response.status})`);
         }
         const csvText = await response.text();
-        setProfiles(parseProfiles(csvText));
+        const parsedProfiles = parseProfiles(csvText).sort((a, b) => b.classRank - a.classRank);
+        setProfiles(parsedProfiles);
       } catch (err) {
         if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : "データ取得中にエラーが発生しました。");
@@ -464,65 +570,147 @@ export function StudentsProfilesDirectory() {
     return () => controller.abort();
   }, [reloadKey]);
 
-  const selectedTagKeys = useMemo(() => selectedTags.map((tag) => tag.key), [selectedTags]);
+  const yearTags = useMemo(() => {
+    const map = new Map<string, Tag>();
+    profiles.forEach((profile) => {
+      if (!profile.classLabel || !isClassTagLabel(profile.classLabel)) return;
+      const tag = toTag(profile.classLabel);
+      map.set(tag.key, tag);
+    });
+    return Array.from(map.values()).sort((a, b) => getClassRank(b.label) - getClassRank(a.label));
+  }, [profiles]);
+
+  const latestClassLabel = useMemo(() => {
+    const validClasses = profiles
+      .map((profile) => profile.classLabel)
+      .filter((label) => isClassTagLabel(label));
+    if (validClasses.length === 0) return "";
+    return validClasses.sort((a, b) => getClassRank(b) - getClassRank(a))[0];
+  }, [profiles]);
+
+  const selectedYearKeys = useMemo(() => selectedYears.map((tag) => tag.key), [selectedYears]);
+  const selectedOtherTagKeys = useMemo(
+    () => selectedOtherTags.map((tag) => tag.key),
+    [selectedOtherTags],
+  );
+  const selectedTagKeys = useMemo(
+    () => [...selectedYearKeys, ...selectedOtherTagKeys],
+    [selectedYearKeys, selectedOtherTagKeys],
+  );
 
   const filteredProfiles = useMemo(() => {
-    if (selectedTagKeys.length === 0) return profiles;
-    return profiles.filter((profile) =>
-      selectedTagKeys.every((tagKey) => profile.filterTagKeys.includes(tagKey)),
+    const yearFiltered =
+      selectedYearKeys.length === 0
+        ? profiles
+        : profiles.filter((profile) => selectedYearKeys.includes(toTagKey(profile.classLabel)));
+    if (selectedOtherTagKeys.length === 0) return yearFiltered;
+    return yearFiltered.filter((profile) =>
+      selectedOtherTagKeys.every((tagKey) => profile.filterTagKeys.includes(tagKey)),
     );
-  }, [profiles, selectedTagKeys]);
+  }, [profiles, selectedYearKeys, selectedOtherTagKeys]);
+
+  useEffect(() => {
+    setPageIndex(0);
+    setSlideClass("translate-x-0 opacity-100");
+    setIsAnimating(false);
+  }, [selectedYearKeys, selectedOtherTagKeys, profiles.length]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProfiles.length / 10));
+  const pagedProfiles = useMemo(
+    () => filteredProfiles.slice(pageIndex * 10, pageIndex * 10 + 10),
+    [filteredProfiles, pageIndex],
+  );
+
+  const toggleYearTag = (tag: Tag) => {
+    setSelectedYears((prev) => {
+      if (prev.some((item) => item.key === tag.key)) return prev.filter((item) => item.key !== tag.key);
+      return [...prev, tag];
+    });
+  };
 
   const handleTagClick = (tag: Tag) => {
-    setSelectedTags((prev) => {
+    if (isClassTagLabel(tag.label)) {
+      toggleYearTag(tag);
+      return;
+    }
+    setSelectedOtherTags((prev) => {
       if (prev.some((item) => item.key === tag.key)) return prev;
       return [...prev, tag];
     });
   };
 
-  const removeSelectedTag = (key: string) => {
-    setSelectedTags((prev) => prev.filter((tag) => tag.key !== key));
+  const removeOtherTag = (key: string) => {
+    setSelectedOtherTags((prev) => prev.filter((tag) => tag.key !== key));
+  };
+
+  const animateToPage = (targetPage: number) => {
+    if (isAnimating) return;
+    if (targetPage < 0 || targetPage >= totalPages) return;
+    if (targetPage === pageIndex) return;
+    const direction = targetPage > pageIndex ? "next" : "prev";
+    setIsAnimating(true);
+    setSlideClass(direction === "next" ? "-translate-x-8 opacity-0" : "translate-x-8 opacity-0");
+
+    window.setTimeout(() => {
+      setPageIndex(targetPage);
+      setSlideClass(direction === "next" ? "translate-x-8 opacity-0" : "-translate-x-8 opacity-0");
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setSlideClass("translate-x-0 opacity-100");
+          setIsAnimating(false);
+        });
+      });
+    }, 180);
   };
 
   return (
     <section className="space-y-6">
       <div className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-5">
-        <p className="text-sm font-semibold text-slate-800">選択中のハッシュタグ</p>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {selectedTags.length === 0 ? (
-            <p className="text-sm text-slate-500">未選択（カード上のタグをクリックすると絞り込みできます）</p>
-          ) : (
-            selectedTags.map((tag) => (
-              <span
-                key={tag.key}
-                className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-sm text-emerald-800"
-              >
-                #{tag.label}
-                <button
-                  type="button"
-                  aria-label={`${tag.label}を解除`}
-                  onClick={() => removeSelectedTag(tag.key)}
-                  className="inline-flex h-4 w-4 items-center justify-center rounded-full text-emerald-800/80 hover:bg-emerald-200"
-                >
-                  ×
-                </button>
-              </span>
-            ))
-          )}
+        <div>
+          <p className="text-sm font-semibold text-slate-800">在学年度</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {yearTags.length > 0 ? (
+              yearTags.map((tag) => (
+                <TagChip
+                  key={tag.key}
+                  tag={tag}
+                  selected={selectedYearKeys.includes(tag.key)}
+                  onClick={toggleYearTag}
+                />
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">在学年度データがありません。</p>
+            )}
+          </div>
         </div>
-        {selectedTags.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => setSelectedTags([])}
-            className="mt-3 text-sm font-medium text-[#006633] underline-offset-4 hover:underline"
-          >
-            すべてクリア
-          </button>
+
+        {selectedOtherTags.length > 0 ? (
+          <div className="mt-5 border-t border-neutral-100 pt-4">
+            <p className="text-sm font-semibold text-slate-800">その他選択中</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {selectedOtherTags.map((tag) => (
+                <span
+                  key={tag.key}
+                  className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-sm text-emerald-800"
+                >
+                  #{tag.label}
+                  <button
+                    type="button"
+                    aria-label={`${tag.label}を解除`}
+                    onClick={() => removeOtherTag(tag.key)}
+                    className="inline-flex h-4 w-4 items-center justify-center rounded-full text-emerald-800/80 hover:bg-emerald-200"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
         ) : null}
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
               <div className="h-6 w-20 animate-pulse rounded bg-gray-100" />
@@ -550,19 +738,51 @@ export function StudentsProfilesDirectory() {
           <p className="text-sm text-slate-600">
             {filteredProfiles.length}件 / 全{profiles.length}件を表示
           </p>
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {filteredProfiles.map((profile) => (
+          <div
+            className={`grid grid-cols-1 gap-5 transition-transform duration-300 ease-out md:grid-cols-2 ${slideClass}`}
+          >
+            {pagedProfiles.map((profile) => (
               <ProfileCard
                 key={profile.id}
                 profile={profile}
                 selectedTagKeys={selectedTagKeys}
                 onTagClick={handleTagClick}
+                isLatestClassMember={Boolean(
+                  latestClassLabel && normalizeText(profile.classLabel) === normalizeText(latestClassLabel),
+                )}
               />
             ))}
           </div>
+
           {filteredProfiles.length === 0 ? (
             <div className="rounded-lg border border-neutral-200 bg-white px-4 py-6 text-center text-sm text-slate-600">
               条件に一致するプロフィールがありません。フィルターを解除してください。
+            </div>
+          ) : null}
+
+          {filteredProfiles.length > 10 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 pt-4">
+              <p className="text-sm text-slate-600">
+                {pageIndex + 1} / {totalPages} ページ
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => animateToPage(pageIndex - 1)}
+                  disabled={pageIndex === 0 || isAnimating}
+                  className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-slate-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  前の10件に戻る
+                </button>
+                <button
+                  type="button"
+                  onClick={() => animateToPage(pageIndex + 1)}
+                  disabled={pageIndex >= totalPages - 1 || isAnimating}
+                  className="rounded-md bg-[#006633] px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  次の10件を見る
+                </button>
+              </div>
             </div>
           ) : null}
         </>

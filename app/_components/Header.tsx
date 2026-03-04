@@ -117,7 +117,7 @@ function DrawerNavList({
                 isPathActive(pathname, category.path) ? "text-[#005543]" : "text-slate-800"
               }`}
             >
-              {category.path === "/" ? "ホームページ" : `${category.label} トップ`}
+              {category.path === "/" ? "ホームページ" : category.label}
             </Link>
             {category.pages.length > 0 ? (
               <button
