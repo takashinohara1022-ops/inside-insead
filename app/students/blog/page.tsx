@@ -1,25 +1,23 @@
-import { getAlumniSection } from "../../../constants/alumni-content";
+import { getCategoryByPath } from "../../../constants/navigationConfig";
 import { PageHero } from "../../_components/PageHero";
 import Pagination from "../../../components/Pagination";
+import { StudentsBlogBoard } from "./_components/StudentsBlogBoard";
+
+export const dynamic = "force-dynamic";
 
 const HERO_IMAGE_URL =
   "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop";
-const P_CLASS = "leading-relaxed text-slate-600 sm:text-[15px]";
 
 export default function StudentsBlogPage() {
-  const section = getAlumniSection("blog");
-  if (!section) return null;
-  const paragraphs = section.body.split(/\n\n+/).filter(Boolean);
+  const category = getCategoryByPath("/students");
+  const blogPage = category?.pages.find((page) => page.path === "/students/blog");
+  const title = blogPage?.title ?? "在校生日記";
 
   return (
     <div className="min-h-screen bg-stone-50 text-slate-900">
-      <PageHero src={HERO_IMAGE_URL} alt="在校生ブログ" title={section.title} />
-      <div className="mx-auto max-w-4xl px-6 py-12 pb-14 sm:px-8 lg:px-12 lg:py-20">
-        <div className="space-y-4">
-          {paragraphs.map((p, i) => (
-            <p key={i} className={P_CLASS}>{p}</p>
-          ))}
-        </div>
+      <PageHero src={HERO_IMAGE_URL} alt={title} title={title} />
+      <div className="mx-auto max-w-6xl px-6 py-12 pb-14 sm:px-8 lg:px-12 lg:py-20">
+        <StudentsBlogBoard />
         <Pagination />
       </div>
     </div>

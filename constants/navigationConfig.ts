@@ -120,7 +120,7 @@ export const NAVIGATION_CONFIG: NavCategory[] = [
       },
       {
         path: "/students/blog",
-        title: "在校生ブログ",
+        title: "在校生日記",
         description:
           "出願、授業、生活、キャリアなど、在校生の一次情報を体験ベースで発信する記事を掲載しています。",
       },

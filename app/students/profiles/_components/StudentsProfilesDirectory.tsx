@@ -271,128 +271,146 @@ function ProfileCard({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <InfoRow label="Home Campus" value={profile.homeCampus} />
-        <InfoRow label="入学時社会人歴(何年目)" value={profile.yearsAtEntry} />
-        <InfoRow label="海外経験(数か月以上の滞在)" value={profile.overseasExperience} />
-        <InfoRow label="利用したMBAアドバイザリーサービス名" value={profile.mbaAdvisoryService} />
-      </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <InfoRow label="英語試験 / 英語試験スコア" value={`${profile.englishTest} / ${profile.englishTestScore}`} />
-        <InfoRow label="能力試験 / 能力試験スコア" value={`${profile.aptitudeTest} / ${profile.aptitudeTestScore}`} />
-      </div>
-
       <div className="mt-4 space-y-3">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            キャリアバックグラウンド大分類
-          </p>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {profile.careerMajorTag ? (
-              <TagChip
-                tag={profile.careerMajorTag}
-                selected={hasTagSelected(profile.careerMajorTag)}
-                onClick={onTagClick}
-              />
-            ) : (
-              <p className="text-sm text-slate-700">-</p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            キャリアバックグラウンド（複数）
-          </p>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {profile.careerBackgrounds.length > 0 ? (
-              profile.careerBackgrounds.map((tag) => (
-                <TagChip
-                  key={tag.key}
-                  tag={tag}
-                  selected={hasTagSelected(tag)}
-                  onClick={onTagClick}
-                />
-              ))
-            ) : (
-              <p className="text-sm text-slate-700">-</p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            Why INSEAD? 判断軸カテゴリー
-          </p>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {profile.whyCategories.length > 0 ? (
-              profile.whyCategories.map((tag) => (
-                <TagChip
-                  key={tag.key}
-                  tag={tag}
-                  selected={hasTagSelected(tag)}
-                  onClick={onTagClick}
-                />
-              ))
-            ) : (
-              <p className="text-sm text-slate-700">-</p>
-            )}
-          </div>
-        </div>
-
-        {profile.homeCampusTag ? (
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              Home Campus (Tag)
-            </p>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              <TagChip
-                tag={profile.homeCampusTag}
-                selected={hasTagSelected(profile.homeCampusTag)}
-                onClick={onTagClick}
+        <details className="rounded-md bg-neutral-50 p-3" open>
+          <summary className="cursor-pointer text-sm font-medium text-slate-800">基本情報</summary>
+          <div className="mt-3 space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <InfoRow label="Home Campus" value={profile.homeCampus} />
+              <InfoRow label="入学時社会人歴(何年目)" value={profile.yearsAtEntry} />
+              <InfoRow label="海外経験(数か月以上の滞在)" value={profile.overseasExperience} />
+              <InfoRow
+                label="利用したMBAアドバイザリーサービス名"
+                value={profile.mbaAdvisoryService}
               />
             </div>
-          </div>
-        ) : null}
 
-        {profile.mbaAdvisoryTag ? (
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              MBAアドバイザリーサービス
-            </p>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              <TagChip
-                tag={profile.mbaAdvisoryTag}
-                selected={hasTagSelected(profile.mbaAdvisoryTag)}
-                onClick={onTagClick}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <InfoRow
+                label="英語試験 / 英語試験スコア"
+                value={`${profile.englishTest} / ${profile.englishTestScore}`}
+              />
+              <InfoRow
+                label="能力試験 / 能力試験スコア"
+                value={`${profile.aptitudeTest} / ${profile.aptitudeTestScore}`}
               />
             </div>
-          </div>
-        ) : null}
 
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">備考タグ</p>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {profile.profileTags.length > 0 ? (
-              profile.profileTags.map((tag) => (
-                <TagChip
-                  key={tag.key}
-                  tag={tag}
-                  selected={hasTagSelected(tag)}
-                  onClick={onTagClick}
-                />
-              ))
-            ) : (
-              <p className="text-sm text-slate-700">-</p>
-            )}
-          </div>
-        </div>
-      </div>
+            <div className="space-y-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  キャリアバックグラウンド大分類
+                </p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {profile.careerMajorTag ? (
+                    <TagChip
+                      tag={profile.careerMajorTag}
+                      selected={hasTagSelected(profile.careerMajorTag)}
+                      onClick={onTagClick}
+                    />
+                  ) : (
+                    <p className="text-sm text-slate-700">-</p>
+                  )}
+                </div>
+              </div>
 
-      <div className="mt-4 space-y-3 border-t border-neutral-100 pt-4">
-        <InfoRow label="他MBA併願先" value={profile.otherMbaApplied} />
-        <InfoRow label="他MBA合格先" value={profile.otherMbaAccepted} />
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  キャリアバックグラウンド（複数）
+                </p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {profile.careerBackgrounds.length > 0 ? (
+                    profile.careerBackgrounds.map((tag) => (
+                      <TagChip
+                        key={tag.key}
+                        tag={tag}
+                        selected={hasTagSelected(tag)}
+                        onClick={onTagClick}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-700">-</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Why INSEAD? 判断軸カテゴリー
+                </p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {profile.whyCategories.length > 0 ? (
+                    profile.whyCategories.map((tag) => (
+                      <TagChip
+                        key={tag.key}
+                        tag={tag}
+                        selected={hasTagSelected(tag)}
+                        onClick={onTagClick}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-700">-</p>
+                  )}
+                </div>
+              </div>
+
+              {profile.homeCampusTag ? (
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Home Campus (Tag)
+                  </p>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <TagChip
+                      tag={profile.homeCampusTag}
+                      selected={hasTagSelected(profile.homeCampusTag)}
+                      onClick={onTagClick}
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              {profile.mbaAdvisoryTag ? (
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    MBAアドバイザリーサービス
+                  </p>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <TagChip
+                      tag={profile.mbaAdvisoryTag}
+                      selected={hasTagSelected(profile.mbaAdvisoryTag)}
+                      onClick={onTagClick}
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  備考タグ
+                </p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {profile.profileTags.length > 0 ? (
+                    profile.profileTags.map((tag) => (
+                      <TagChip
+                        key={tag.key}
+                        tag={tag}
+                        selected={hasTagSelected(tag)}
+                        onClick={onTagClick}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-700">-</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 border-t border-neutral-200 pt-4">
+              <InfoRow label="他MBA併願先" value={profile.otherMbaApplied} />
+              <InfoRow label="他MBA合格先" value={profile.otherMbaAccepted} />
+            </div>
+          </div>
+        </details>
 
         <details className="rounded-md bg-neutral-50 p-3">
           <summary className="cursor-pointer text-sm font-medium text-slate-800">

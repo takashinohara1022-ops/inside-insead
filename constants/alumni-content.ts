@@ -24,7 +24,7 @@ export const ALUMNI_SECTIONS: AlumniSection[] = [
   },
   {
     id: "blog",
-    title: "在校生ブログ",
+    title: "在校生日記",
     href: "/students/blog",
     body: `在校生・卒業生による体験記やブログ記事をここに掲載予定です。出願ストーリー、キャンパスライフ、キャリアチェンジの実例など、より深い情報を発信していくことを想定しています。
 
