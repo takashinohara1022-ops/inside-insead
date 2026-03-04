@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { ChevronDown, ExternalLink, Menu, X } from "lucide-react";
 import { NAVIGATION_CONFIG, type NavCategory } from "../../constants/navigationConfig";
 
@@ -176,7 +175,6 @@ export function Header() {
   const coffeeChatCategory = CATEGORIES.find((category) => category.path === "/coffee-chat");
   const coffeeChatHref = coffeeChatCategory?.path ?? "/coffee-chat";
   const coffeeChatLabel = coffeeChatCategory?.label ?? "コーヒーチャット申込";
-  const canUseDOM = typeof document !== "undefined";
   const closeDrawer = () => setDrawerOpen(false);
 
   useEffect(() => {
@@ -276,12 +274,7 @@ export function Header() {
       >
         {coffeeChatLabel}
       </Link>
-      {canUseDOM
-        ? createPortal(
-            <HeaderDrawer drawerOpen={drawerOpen} closeDrawer={closeDrawer} pathname={pathname} />,
-            document.body,
-          )
-        : null}
+      <HeaderDrawer drawerOpen={drawerOpen} closeDrawer={closeDrawer} pathname={pathname} />
     </>
   );
 }

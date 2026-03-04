@@ -151,20 +151,24 @@ function guessDriveMediaType(url: string): "image" | "video" {
   return "image";
 }
 
-function getMediaSource(post: BlogPost): MediaSource {
+function getMediaSources(post: BlogPost): MediaSource[] {
   const youtubeEmbed = toYouTubeEmbedUrl(post.youtubeLink);
-  if (youtubeEmbed) return { kind: "youtube", src: youtubeEmbed };
+  if (youtubeEmbed) return [{ kind: "youtube", src: youtubeEmbed }];
 
-  const firstMedia = post.mediaUrls[0];
-  if (firstMedia) {
-    const driveFileId = extractDriveFileId(firstMedia);
-    const src = driveFileId
-      ? `https://drive.google.com/uc?export=view&id=${driveFileId}`
-      : firstMedia;
-    return { kind: guessDriveMediaType(firstMedia), src, driveFileId: driveFileId ?? undefined };
-  }
+  const mediaSources = post.mediaUrls
+    .map((url) => {
+      const driveFileId = extractDriveFileId(url);
+      const src = driveFileId ? `https://drive.google.com/uc?export=view&id=${driveFileId}` : url;
+      return {
+        kind: guessDriveMediaType(url),
+        src,
+        driveFileId: driveFileId ?? undefined,
+      } satisfies MediaSource;
+    })
+    .filter((item) => Boolean(item.src));
 
-  return { kind: "none" };
+  if (mediaSources.length > 0) return mediaSources;
+  return [{ kind: "none" }];
 }
 
 function DriveImage({
@@ -199,67 +203,84 @@ function DriveImage({
 function MediaPreview({
   post,
   className,
+  showAll = false,
 }: {
   post: BlogPost;
   className?: string;
+  showAll?: boolean;
 }) {
-  const media = getMediaSource(post);
-
-  if (media.kind === "youtube" && media.src) {
-    return (
-      <iframe
-        src={media.src}
-        title={post.title}
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        className={className ?? "aspect-video w-full rounded-lg border border-neutral-200"}
-      />
-    );
-  }
-
-  if (media.kind === "video" && media.src) {
-    return (
-      <video
-        controls
-        className={className ?? "aspect-video w-full rounded-lg border border-neutral-200 bg-black"}
-      >
-        <source src={media.src} />
-      </video>
-    );
-  }
-
-  if (media.kind === "image" && media.src) {
-    if (media.driveFileId) {
+  const mediaSources = getMediaSources(post);
+  const renderSource = (media: MediaSource, index: number) => {
+    const key = `${media.kind}-${media.src ?? "none"}-${index}`;
+    if (media.kind === "youtube" && media.src) {
       return (
-        <DriveImage
-          fileId={media.driveFileId}
-          alt={post.title}
-          className={
-            className ?? "aspect-video w-full rounded-lg border border-neutral-200 object-cover"
-          }
+        <iframe
+          key={key}
+          src={media.src}
+          title={`${post.title}-${index}`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className={className ?? "aspect-video w-full rounded-lg border border-neutral-200"}
         />
       );
     }
+
+    if (media.kind === "video" && media.src) {
+      return (
+        <video
+          key={key}
+          controls
+          className={className ?? "aspect-video w-full rounded-lg border border-neutral-200 bg-black"}
+        >
+          <source src={media.src} />
+        </video>
+      );
+    }
+
+    if (media.kind === "image" && media.src) {
+      if (media.driveFileId) {
+        return (
+          <DriveImage
+            key={key}
+            fileId={media.driveFileId}
+            alt={post.title}
+            className={className ?? "aspect-video w-full rounded-lg border border-neutral-200 object-cover"}
+          />
+        );
+      }
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={key}
+          src={media.src}
+          alt={post.title}
+          className={className ?? "aspect-video w-full rounded-lg border border-neutral-200 object-cover"}
+        />
+      );
+    }
+
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={media.src}
-        alt={post.title}
-        className={className ?? "aspect-video w-full rounded-lg border border-neutral-200 object-cover"}
-      />
+      <div
+        key={key}
+        className={
+          className ??
+          "flex aspect-video w-full items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-sm text-slate-500"
+        }
+      >
+        メディアなし
+      </div>
+    );
+  };
+
+  if (showAll) {
+    return (
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {mediaSources.map((media, index) => renderSource(media, index))}
+      </div>
     );
   }
 
-  return (
-    <div
-      className={
-        className ??
-        "flex aspect-video w-full items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-sm text-slate-500"
-      }
-    >
-      メディアなし
-    </div>
-  );
+  return renderSource(mediaSources[0], 0);
 }
 
 function formatDate(postedAt: string): string {
@@ -383,7 +404,14 @@ export function StudentsBlogBoard() {
                 onClick={() => setSelectedPost(post)}
                 className="group rounded-xl border border-neutral-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                <MediaPreview post={post} />
+                <div className="relative">
+                  <MediaPreview post={post} />
+                  {getMediaSources(post).length > 1 ? (
+                    <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] text-white">
+                      +{getMediaSources(post).length - 1}
+                    </span>
+                  ) : null}
+                </div>
                 <h3 className="mt-4 line-clamp-2 text-lg font-semibold tracking-tight text-slate-900">
                   {post.title}
                 </h3>
@@ -433,7 +461,11 @@ export function StudentsBlogBoard() {
                 閉じる
               </button>
             </div>
-            <MediaPreview post={selectedPost} className="aspect-video w-full rounded-lg border border-neutral-200 object-cover" />
+            <MediaPreview
+              post={selectedPost}
+              showAll
+              className="aspect-video w-full rounded-lg border border-neutral-200 object-cover"
+            />
             <div className="mt-4 flex flex-wrap gap-2">
               {selectedPost.hashtags.map((tag) => (
                 <span
