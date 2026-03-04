@@ -15,7 +15,7 @@ export const ALUMNI_SECTIONS: AlumniSection[] = [
   {
     id: "profile",
     title: "在校生プロフィール",
-    href: "/students/profile",
+    href: "/students/profiles",
     body: `在校生・卒業生とのコーヒーチャットを通じて、INSEADでのリアルな生活とキャリアを知ることができます。業界・バックグラウンド・キャンパス別に、日本人の在校生・卒業生を検索できます。
 
 コーヒーチャットは完全無料で、受験戦略や家族帯同、キャリアチェンジなど、公には聞きづらいテーマもカジュアルに相談できる場を想定しています。

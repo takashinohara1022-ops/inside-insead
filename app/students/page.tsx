@@ -49,7 +49,7 @@ export default function StudentsPage() {
                   </Link>
                 </h2>
                 <p className={`${BODY_TEXT_CLASS} line-clamp-3`}>
-                  {getStudentsExcerpt(page.path)}
+                  {getStudentsExcerpt(page.path) || page.description}
                 </p>
                 <Link
                   href={page.path}

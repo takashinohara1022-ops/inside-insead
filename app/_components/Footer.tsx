@@ -1,13 +1,29 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { NAV_TREE, type NavNode } from "./navigation";
 
+function normalizePath(path: string): string {
+  return path.replace(/\/$/, "") || "/";
+}
+
+function isPathActive(currentPath: string, targetPath: string): boolean {
+  const current = normalizePath(currentPath);
+  const target = normalizePath(targetPath);
+  if (target === "/") return current === "/";
+  return current === target || current.startsWith(`${target}/`);
+}
+
 function FooterNodeList({
   items,
+  pathname,
   level = 0,
 }: {
   items: NavNode[];
+  pathname: string;
   level?: number;
 }) {
   return (
@@ -16,16 +32,18 @@ function FooterNodeList({
         const nested = (item.children?.length ?? 0) > 0;
         return (
           <li key={item.label} className={level > 0 ? "pl-3" : undefined}>
-            <a
+            <Link
               href={item.href}
-              className="inline-flex items-center gap-2 text-sm text-white/80 underline-offset-4 transition hover:text-white hover:underline"
+              className={`inline-flex items-center gap-2 text-sm underline-offset-4 transition hover:text-white hover:underline ${
+                isPathActive(pathname, item.href) ? "text-white" : "text-white/80"
+              }`}
             >
               <span className={nested ? "font-medium text-white/85" : undefined}>
                 {item.label}
               </span>
-            </a>
+            </Link>
             {nested ? (
-              <FooterNodeList items={item.children!} level={level + 1} />
+              <FooterNodeList items={item.children!} pathname={pathname} level={level + 1} />
             ) : null}
           </li>
         );
@@ -35,6 +53,7 @@ function FooterNodeList({
 }
 
 export function Footer() {
+  const pathname = usePathname() ?? "/";
   const home = NAV_TREE.find((n) => n.href === "/");
   const primaryCategories = NAV_TREE.filter(
     (n) => n.href !== "/" && n.href !== "/coffee-chat"
@@ -51,18 +70,26 @@ export function Footer() {
                 <div key={category.href} className="space-y-4">
                   <Link
                     href={category.href}
-                    className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-white underline-offset-4 hover:underline"
+                    className={`inline-flex items-center gap-2 text-base font-semibold tracking-tight underline-offset-4 hover:underline ${
+                      isPathActive(pathname, category.href) ? "text-white underline" : "text-white/90"
+                    }`}
                   >
                     <span>{category.label}</span>
                   </Link>
-                  {category.children ? <FooterNodeList items={category.children} /> : null}
+                  {category.children ? (
+                    <FooterNodeList items={category.children} pathname={pathname} />
+                  ) : null}
                 </div>
               ))}
             </div>
             <div className="space-y-4">
               <Link
                 href={coffeeChat?.href ?? "/coffee-chat"}
-                className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-white underline-offset-4 hover:underline"
+                className={`inline-flex items-center gap-2 text-base font-semibold tracking-tight underline-offset-4 hover:underline ${
+                  isPathActive(pathname, coffeeChat?.href ?? "/coffee-chat")
+                    ? "text-white underline"
+                    : "text-white/90"
+                }`}
               >
                 <span>コーヒーチャット申込</span>
               </Link>
@@ -70,7 +97,11 @@ export function Footer() {
                 <li>
                   <Link
                     href={coffeeChat?.href ?? "/coffee-chat"}
-                    className="text-sm text-white/80 underline-offset-4 transition hover:text-white hover:underline"
+                    className={`text-sm underline-offset-4 transition hover:text-white hover:underline ${
+                      isPathActive(pathname, coffeeChat?.href ?? "/coffee-chat")
+                        ? "text-white"
+                        : "text-white/80"
+                    }`}
                   >
                     申し込みページへ
                   </Link>
@@ -86,7 +117,9 @@ export function Footer() {
               </p>
               <Link
                 href={home?.href ?? "/"}
-                className="text-sm font-medium text-white/85 underline-offset-4 transition hover:text-white hover:underline"
+                className={`text-sm font-medium underline-offset-4 transition hover:text-white hover:underline ${
+                  isPathActive(pathname, home?.href ?? "/") ? "text-white" : "text-white/85"
+                }`}
               >
                 Home
               </Link>

@@ -113,8 +113,8 @@ export const NAVIGATION_CONFIG: NavCategory[] = [
     label: "在校生",
     pages: [
       {
-        path: "/students/profile",
-        title: "在校生プロフィール",
+        path: "/students/profiles",
+        title: "在校生プロフィール一覧",
         description:
           "在校生・卒業生のバックグラウンドや関心領域を一覧で確認でき、相談相手を探しやすい構成です。",
       },

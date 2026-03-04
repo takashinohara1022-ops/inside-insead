@@ -5,6 +5,8 @@ import { ClassProfileDashboard } from "./_components/ClassProfileDashboard";
 import { GlobalRankingsChart } from "./_components/GlobalRankingsChart";
 import { LatestUpdates } from "./_components/LatestUpdates";
 
+export const dynamic = "force-dynamic";
+
 const SECTION_HEADING_CLASS =
   "mb-6 text-lg font-semibold tracking-tight text-slate-900 sm:text-xl";
 
