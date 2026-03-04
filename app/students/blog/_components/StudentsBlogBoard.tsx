@@ -1,175 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Papa from "papaparse";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  STUDENTS_BLOG_CSV_URL,
+  type BlogPost,
+  type MediaSource,
+  getMediaSources,
+  parseBlogDate,
+  parseBlogPosts,
+} from "../../../../lib/studentsBlog";
 
-const CSV_URL =
-  "https://docs.google.com/spreadsheets/d/1AmUHbN3E-AN_Vmc3Wc2LU951_YihjP2o1xKyLY1cypI/export?format=csv";
-
-type CsvRow = Record<string, string | undefined>;
 type CampusFilter = "all" | "fonty" | "singy";
-
-export type BlogPost = {
-  id: string;
-  postedAt: string;
-  postedAtDate: Date | null;
-  author: string;
-  title: string;
-  body: string;
-  mediaUrls: string[];
-  youtubeLink: string;
-  campus: "Fonty" | "Singy" | "Other";
-  hashtags: string[];
-};
-
-type MediaKind = "youtube" | "image" | "video" | "none";
-type MediaSource = {
-  kind: MediaKind;
-  src?: string;
-  driveFileId?: string;
-};
-
-function normalizeText(value: string): string {
-  return value.replace(/\s+/g, " ").trim();
-}
-
-function normalizeForMatch(value: string): string {
-  return normalizeText(value).toLowerCase();
-}
-
-function getByHeaderMatch(row: CsvRow, keywords: string[]): string {
-  const entries = Object.entries(row);
-  for (const [header, rawValue] of entries) {
-    const normalizedHeader = normalizeForMatch(header);
-    const hit = keywords.some((keyword) => normalizedHeader.includes(normalizeForMatch(keyword)));
-    if (hit) return (rawValue ?? "").trim();
-  }
-  return "";
-}
-
-function parseDate(value: string): Date | null {
-  const text = value.trim();
-  if (!text) return null;
-  const normalized = text.replace(/\./g, "/").replace(/-/g, "/");
-  const parsed = new Date(normalized);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return parsed;
-}
-
-function splitByComma(raw: string): string[] {
-  return raw
-    .split(/[,，]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function detectCampus(tags: string[]): "Fonty" | "Singy" | "Other" {
-  const normalized = tags.map((tag) => normalizeForMatch(tag));
-  if (normalized.some((tag) => tag.includes("font"))) return "Fonty";
-  if (normalized.some((tag) => tag.includes("sing"))) return "Singy";
-  return "Other";
-}
-
-function normalizeHashtag(tag: string): string {
-  return tag.replace(/^#/, "").trim();
-}
-
-function parseBlogPosts(csvText: string): BlogPost[] {
-  const parsed = Papa.parse<CsvRow>(csvText, { header: true, skipEmptyLines: true });
-
-  return parsed.data
-    .map((row, index) => {
-      const postedAt = getByHeaderMatch(row, ["投稿日"]);
-      const author = getByHeaderMatch(row, ["投稿者"]);
-      const title = getByHeaderMatch(row, ["タイトル"]);
-      const body = getByHeaderMatch(row, ["本文"]);
-      const themeRaw = getByHeaderMatch(row, ["テーマ", "ハッシュタグ"]);
-      const mediaRaw = getByHeaderMatch(row, ["写真や動画", "メディア"]);
-      const youtubeLink = getByHeaderMatch(row, ["Youtube", "YouTube", "リンク"]);
-      const hashtags = splitByComma(themeRaw).map(normalizeHashtag).filter(Boolean);
-      const mediaUrls = splitByComma(mediaRaw);
-      const postedAtDate = parseDate(postedAt);
-
-      return {
-        id: `${title || "blog"}-${index}`,
-        postedAt,
-        postedAtDate,
-        author: author || "匿名",
-        title: title || "無題",
-        body: body || "",
-        mediaUrls,
-        youtubeLink,
-        campus: detectCampus(hashtags),
-        hashtags,
-      } satisfies BlogPost;
-    })
-    .sort((a, b) => {
-      const aTime = a.postedAtDate?.getTime() ?? 0;
-      const bTime = b.postedAtDate?.getTime() ?? 0;
-      return bTime - aTime;
-    });
-}
-
-function toYouTubeEmbedUrl(url: string): string | null {
-  if (!url) return null;
-  const trimmed = url.trim();
-  try {
-    const parsed = new URL(trimmed);
-    if (parsed.hostname.includes("youtu.be")) {
-      const id = parsed.pathname.replace("/", "");
-      return id ? `https://www.youtube.com/embed/${id}` : null;
-    }
-    if (parsed.hostname.includes("youtube.com")) {
-      const id = parsed.searchParams.get("v");
-      if (id) return `https://www.youtube.com/embed/${id}`;
-      const parts = parsed.pathname.split("/").filter(Boolean);
-      const embedIndex = parts.findIndex((part) => part === "embed");
-      if (embedIndex >= 0 && parts[embedIndex + 1]) {
-        return `https://www.youtube.com/embed/${parts[embedIndex + 1]}`;
-      }
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
-function extractDriveFileId(url: string): string | null {
-  if (!url) return null;
-  const text = url.trim();
-  const idParam = text.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (idParam?.[1]) return idParam[1];
-  const pathParam = text.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (pathParam?.[1]) return pathParam[1];
-  return null;
-}
-
-function guessDriveMediaType(url: string): "image" | "video" {
-  const lower = url.toLowerCase();
-  if (/\.(mp4|mov|webm|ogg)(\?|$)/.test(lower)) return "video";
-  if (lower.includes("video")) return "video";
-  return "image";
-}
-
-function getMediaSources(post: BlogPost): MediaSource[] {
-  const youtubeEmbed = toYouTubeEmbedUrl(post.youtubeLink);
-  if (youtubeEmbed) return [{ kind: "youtube", src: youtubeEmbed }];
-
-  const mediaSources = post.mediaUrls
-    .map((url) => {
-      const driveFileId = extractDriveFileId(url);
-      const src = driveFileId ? `https://drive.google.com/uc?export=view&id=${driveFileId}` : url;
-      return {
-        kind: guessDriveMediaType(url),
-        src,
-        driveFileId: driveFileId ?? undefined,
-      } satisfies MediaSource;
-    })
-    .filter((item) => Boolean(item.src));
-
-  if (mediaSources.length > 0) return mediaSources;
-  return [{ kind: "none" }];
-}
 
 function DriveImage({
   fileId,
@@ -284,7 +126,7 @@ function MediaPreview({
 }
 
 function formatDate(postedAt: string): string {
-  const date = parseDate(postedAt);
+  const date = parseBlogDate(postedAt);
   if (!date) return postedAt || "-";
   return new Intl.DateTimeFormat("ja-JP", {
     year: "numeric",
@@ -301,6 +143,9 @@ function campusMatches(post: BlogPost, filter: CampusFilter): boolean {
 }
 
 export function StudentsBlogBoard() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialPostId = searchParams.get("post");
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -314,7 +159,10 @@ export function StudentsBlogBoard() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(CSV_URL, { cache: "no-store", signal: controller.signal });
+        const response = await fetch(STUDENTS_BLOG_CSV_URL, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
         if (!response.ok) {
           throw new Error(`CSVの取得に失敗しました (${response.status})`);
         }
@@ -335,6 +183,14 @@ export function StudentsBlogBoard() {
     () => posts.filter((post) => campusMatches(post, filter)),
     [posts, filter],
   );
+
+  useEffect(() => {
+    if (!initialPostId || posts.length === 0) return;
+    const matched = posts.find((post) => post.id === initialPostId);
+    if (matched) {
+      setSelectedPost(matched);
+    }
+  }, [initialPostId, posts]);
 
   return (
     <section className="space-y-6">
@@ -406,9 +262,9 @@ export function StudentsBlogBoard() {
               >
                 <div className="relative">
                   <MediaPreview post={post} />
-                  {getMediaSources(post).length > 1 ? (
+                  {getMediaSources(post).filter((m) => m.kind !== "none").length > 1 ? (
                     <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] text-white">
-                      +{getMediaSources(post).length - 1}
+                      +{getMediaSources(post).filter((m) => m.kind !== "none").length - 1}
                     </span>
                   ) : null}
                 </div>
@@ -455,7 +311,10 @@ export function StudentsBlogBoard() {
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedPost(null)}
+                onClick={() => {
+                  setSelectedPost(null);
+                  router.replace("/students/blog", { scroll: false });
+                }}
                 className="rounded-md border border-neutral-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-neutral-50"
               >
                 閉じる

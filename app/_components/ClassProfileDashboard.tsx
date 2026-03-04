@@ -11,6 +11,7 @@ type BarItem = { label: string; value: number };
 type CountItem = { label: string; count: number };
 type ClassTab = {
   key: string;
+  shortLabel: string;
   displayLabel: string;
   year: number;
   monthCode: "J" | "D";
@@ -194,6 +195,26 @@ function sortByValueDesc(items: BarItem[]): BarItem[] {
   return [...items].sort((a, b) => b.value - a.value);
 }
 
+function sortIndustryItems(items: BarItem[]): BarItem[] {
+  const isOther = (label: string) => {
+    const normalized = normalizeForMatch(label);
+    return normalized === "その他" || normalized === "other";
+  };
+  const regular = items.filter((item) => !isOther(item.label));
+  const other = items.filter((item) => isOther(item.label));
+  return [...sortByValueDesc(regular), ...other];
+}
+
+function sortByLabelOrder(items: BarItem[], order: string[]): BarItem[] {
+  const rank = new Map(order.map((label, index) => [label, index]));
+  return [...items].sort((a, b) => {
+    const ra = rank.get(a.label) ?? Number.MAX_SAFE_INTEGER;
+    const rb = rank.get(b.label) ?? Number.MAX_SAFE_INTEGER;
+    if (ra !== rb) return ra - rb;
+    return b.value - a.value;
+  });
+}
+
 function normalizeIndustryLabel(industry: string): string {
   const value = industry || "未回答";
   if (!value.trim()) return "未回答";
@@ -364,7 +385,7 @@ function buildSummary(profiles: StudentProfile[]): ProfileSummary {
     });
   }
 
-  const industry = sortByValueDesc(toPercentItems(industryCounter, total));
+  const industry = sortIndustryItems(toPercentItems(industryCounter, total));
 
   const sponsorship = toPercentItems(sponsorCounter, total).filter((item) => item.value > 0);
   const campus = toPercentItems(campusCounter, total).filter((item) => item.value > 0);
@@ -374,8 +395,14 @@ function buildSummary(profiles: StudentProfile[]): ProfileSummary {
   const greScoreDistribution = toPercentItems(greCounter, greTakerCount).filter(
     (item) => item.value > 0,
   );
-  const overseas = toPercentItems(overseasCounter, total).filter((item) => item.value > 0);
-  const entryWorkYears = toPercentItems(entryWorkYearsCounter, total).filter((item) => item.value > 0);
+  const overseas = sortByLabelOrder(
+    toPercentItems(overseasCounter, total).filter((item) => item.value > 0),
+    ["5年以上", "3-5年", "1-3年", "なし"],
+  );
+  const entryWorkYears = sortByLabelOrder(
+    toPercentItems(entryWorkYearsCounter, total).filter((item) => item.value > 0),
+    ["10年以上", "7-9年目", "4-6年目", "1-3年目", "未回答"],
+  );
   const whyInseadTop3 = Array.from(whyCounter.entries())
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count)
@@ -401,6 +428,7 @@ function buildClassTabs(profiles: StudentProfile[]): ClassTab[] {
     if (!code) continue;
     unique.set(profile.classKey, {
       key: profile.classKey,
+      shortLabel: profile.classKey,
       displayLabel: profile.classDisplayLabel ?? profile.classKey,
       year: profile.gradYear,
       monthCode: code,
@@ -468,7 +496,7 @@ function HorizontalCountBarChart({ items }: { items: CountItem[] }) {
 
 export function ClassProfileDashboard() {
   const [profiles, setProfiles] = useState<StudentProfile[]>([]);
-  const [selectedClass, setSelectedClass] = useState("All");
+  const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -503,15 +531,21 @@ export function ClassProfileDashboard() {
   const classTabs = useMemo(() => buildClassTabs(profiles), [profiles]);
 
   useEffect(() => {
-    if (selectedClass === "All") return;
-    const exists = classTabs.some((tab) => tab.key === selectedClass);
-    if (!exists) setSelectedClass("All");
-  }, [classTabs, selectedClass]);
+    setSelectedClasses((prev) => prev.filter((key) => classTabs.some((tab) => tab.key === key)));
+  }, [classTabs]);
 
   const filteredProfiles = useMemo(() => {
-    if (selectedClass === "All") return profiles;
-    return profiles.filter((profile) => profile.classKey === selectedClass);
-  }, [profiles, selectedClass]);
+    if (selectedClasses.length === 0) return profiles;
+    return profiles.filter(
+      (profile) => profile.classKey != null && selectedClasses.includes(profile.classKey),
+    );
+  }, [profiles, selectedClasses]);
+
+  const toggleClass = (classKey: string) => {
+    setSelectedClasses((prev) =>
+      prev.includes(classKey) ? prev.filter((key) => key !== classKey) : [...prev, classKey],
+    );
+  };
 
   const summary = useMemo(() => buildSummary(filteredProfiles), [filteredProfiles]);
 
@@ -556,43 +590,36 @@ export function ClassProfileDashboard() {
     <div className="rounded-xl border border-neutral-200 bg-white shadow-lg">
       <div className="flex flex-col gap-4 border-b border-neutral-100 px-5 pt-5 pb-4 sm:px-6 sm:pt-6 sm:pb-4">
         <div
-          className="flex flex-wrap gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-1"
+          className="flex flex-wrap gap-2"
           role="tablist"
           aria-label="クラスでフィルター"
         >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={selectedClass === "All"}
-            onClick={() => setSelectedClass("All")}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40 ${
-              selectedClass === "All"
-                ? "bg-[#005543] text-white shadow-sm"
-                : "text-slate-600 hover:bg-neutral-200/80 hover:text-slate-900"
-            }`}
-          >
-            All
-          </button>
           {classTabs.map((tab) => (
             <button
               key={tab.key}
               type="button"
               role="tab"
-              aria-selected={selectedClass === tab.key}
-              onClick={() => setSelectedClass(tab.key)}
+              aria-selected={selectedClasses.includes(tab.key)}
+              onClick={() => toggleClass(tab.key)}
               title={tab.displayLabel}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40 ${
-                selectedClass === tab.key
-                  ? "bg-[#005543] text-white shadow-sm"
-                  : "text-slate-600 hover:bg-neutral-200/80 hover:text-slate-900"
+              className={`rounded-full px-3 py-1 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40 ${
+                selectedClasses.includes(tab.key)
+                  ? "bg-emerald-800 text-white"
+                  : "bg-green-100 text-green-800 hover:bg-green-200"
               }`}
             >
-              {tab.displayLabel}
+              #{tab.shortLabel}
             </button>
           ))}
         </div>
         <p className="text-xs text-slate-500">
-          対象: {selectedClass === "All" ? "全クラス" : classTabs.find((tab) => tab.key === selectedClass)?.displayLabel}
+          対象:{" "}
+          {selectedClasses.length === 0
+            ? "全クラス"
+            : classTabs
+                .filter((tab) => selectedClasses.includes(tab.key))
+                .map((tab) => tab.displayLabel)
+                .join(" / ")}
         </p>
       </div>
 

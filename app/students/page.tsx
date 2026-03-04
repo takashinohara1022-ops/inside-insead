@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getCategoryByPath } from "../../constants/navigationConfig";
-import { ALUMNI_SECTIONS } from "../../constants/alumni-content";
 import { PageHero } from "../_components/PageHero";
 import Pagination from "../../components/Pagination";
 
@@ -11,17 +10,18 @@ const SECTION_HEADING_CLASS =
   "text-lg font-semibold tracking-tight text-slate-900 sm:text-xl transition-colors hover:text-[#005543]";
 const BODY_TEXT_CLASS = "leading-relaxed text-slate-600 sm:text-[15px]";
 
-function excerptFromBody(body: string, maxChars = 160): string {
-  const normalized = body.replace(/\s+/g, " ").trim();
-  return normalized.length > maxChars
-    ? `${normalized.slice(0, maxChars).trim()}...`
-    : normalized;
-}
-
-function getStudentsExcerpt(path: string): string {
-  const section = ALUMNI_SECTIONS.find((s) => s.href === path);
-  return section ? excerptFromBody(section.body, 160) : "";
-}
+const STUDENTS_TOP_CONTENT: Record<string, { description: string; buttonLabel: string }> = {
+  "/students/profiles": {
+    description:
+      "在校生の経歴、受験スコア、志望動機を一覧公開しています。業界、キャンパス、社費・私費などの条件で絞り込み検索することができます。",
+    buttonLabel: "在校生プロフィール一覧を閲覧する",
+  },
+  "/students/blog": {
+    description:
+      "現在の在校生が、日々の学生生活や、アプリケーションプロセスの振り返り、将来の展望等についての記事を書きます。公式パ情報だけでは伝わらない、キャンパスのリアルな日常をお届けします。",
+    buttonLabel: "在校生ブログを読む",
+  },
+};
 
 export default function StudentsPage() {
   const category = getCategoryByPath("/students");
@@ -49,13 +49,13 @@ export default function StudentsPage() {
                   </Link>
                 </h2>
                 <p className={`${BODY_TEXT_CLASS} line-clamp-3`}>
-                  {getStudentsExcerpt(page.path) || page.description}
+                  {STUDENTS_TOP_CONTENT[page.path]?.description ?? page.description}
                 </p>
                 <Link
                   href={page.path}
                   className="mt-3 inline-block text-sm font-medium text-[#005543] transition-colors hover:underline"
                 >
-                  ...つづきを見る
+                  {STUDENTS_TOP_CONTENT[page.path]?.buttonLabel ?? "詳細を見る"}
                 </Link>
               </section>
             );

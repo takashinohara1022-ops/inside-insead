@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 
 const CSV_URL =
   "https://docs.google.com/spreadsheets/d/1gGPva62UWo_U0QidDD7oPL1Qgs-NtBLisKgdWIO7FbY/export?format=csv";
@@ -268,16 +268,18 @@ function AccordionSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white">
+    <section className="rounded-lg border border-neutral-200 bg-transparent">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between rounded-lg bg-emerald-700 px-4 py-2.5 text-left text-sm font-semibold text-white transition hover:bg-emerald-800"
+        className="flex w-full items-center justify-between rounded-lg bg-white px-4 py-3 text-left text-sm font-semibold text-slate-900 transition hover:bg-neutral-50"
       >
         <span>{title}</span>
         <span className="inline-flex items-center gap-2">
-          <span className="text-base">{open ? "−" : "+"}</span>
-          <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : "rotate-0"}`} />
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-300 bg-white text-slate-700">
+            {open ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          </span>
+          <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${open ? "rotate-180" : "rotate-0"}`} />
         </span>
       </button>
       {open ? <div className="space-y-4 px-4 py-4">{children}</div> : null}
@@ -333,22 +335,6 @@ function ProfileCard({
               />
             ) : null}
           </div>
-        </div>
-        <div className="flex flex-wrap justify-end gap-1.5">
-          {profile.classTag ? (
-            <TagChip
-              tag={profile.classTag}
-              selected={hasTagSelected(profile.classTag)}
-              onClick={onTagClick}
-            />
-          ) : null}
-          {profile.sponsorTag ? (
-            <TagChip
-              tag={profile.sponsorTag}
-              selected={hasTagSelected(profile.sponsorTag)}
-              onClick={onTagClick}
-            />
-          ) : null}
         </div>
       </div>
 
@@ -525,7 +511,7 @@ function ProfileCard({
         {isLatestClassMember ? (
           <a
             href={`/coffee-chat?student=${coffeeChatStudentParam}`}
-            className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-[#006633] px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-emerald-800"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#005543] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-[#004435] hover:shadow-lg"
           >
             {profile.initials} とコーヒーチャットをする
           </a>
@@ -634,7 +620,9 @@ export function StudentsProfilesDirectory() {
       return;
     }
     setSelectedOtherTags((prev) => {
-      if (prev.some((item) => item.key === tag.key)) return prev;
+      if (prev.some((item) => item.key === tag.key)) {
+        return prev.filter((item) => item.key !== tag.key);
+      }
       return [...prev, tag];
     });
   };
@@ -770,17 +758,19 @@ export function StudentsProfilesDirectory() {
                   type="button"
                   onClick={() => animateToPage(pageIndex - 1)}
                   disabled={pageIndex === 0 || isAnimating}
-                  className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-slate-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-[#005543] hover:text-[#005543] disabled:cursor-not-allowed disabled:opacity-50"
                 >
+                  <ChevronLeft className="h-4 w-4" />
                   前の10件に戻る
                 </button>
                 <button
                   type="button"
                   onClick={() => animateToPage(pageIndex + 1)}
                   disabled={pageIndex >= totalPages - 1 || isAnimating}
-                  className="rounded-md bg-[#006633] px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#005543] bg-white px-4 py-2 text-sm font-semibold text-[#005543] transition hover:bg-[#005543] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   次の10件を見る
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             </div>

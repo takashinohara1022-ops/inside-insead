@@ -10,79 +10,31 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-
-const YEARS = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
-
-// Financial Times (Global MBA)
-const FT: Record<number, number> = {
-  2016: 1,
-  2017: 1,
-  2018: 2,
-  2019: 3,
-  2020: 4,
-  2021: 1,
-  2022: 3,
-  2023: 2,
-  2024: 2,
-  2025: 2,
-  2026: 2,
-};
-
-// QS (Global MBA)
-const QS: Record<number, number> = {
-  2018: 2,
-  2019: 6,
-  2020: 3,
-  2021: 6,
-  2022: 7,
-  2023: 9,
-  2024: 9,
-  2025: 11,
-  2026: 8,
-};
-
-// Bloomberg (International/European)
-const BLOOMBERG: Record<number, number> = {
-  2016: 1,
-  2017: 1,
-  2018: 1,
-  2019: 2,
-  2021: 2,
-  2022: 3,
-  2023: 5,
-  2024: 5,
-  2025: 5,
-};
-
-// Forbes (Best International 1-Year MBA) — 隔年
-const FORBES: Record<number, number> = {
-  2017: 2,
-  2019: 2,
-  2021: 1,
-  2023: 2,
-};
-
-const CHART_DATA = YEARS.map((year) => ({
+import {
+  GLOBAL_RANKING_SOURCES,
+  GLOBAL_RANKING_YEARS,
+} from "../../constants/globalRankingsData";
+const CHART_DATA = GLOBAL_RANKING_YEARS.map((year) => ({
   year: `${year}年`,
   yearNum: year,
-  ft: FT[year] ?? null,
-  qs: QS[year] ?? null,
-  bloomberg: BLOOMBERG[year] ?? null,
-  forbes: FORBES[year] ?? null,
+  ft: GLOBAL_RANKING_SOURCES.ft.data[year] ?? null,
+  qs: GLOBAL_RANKING_SOURCES.qs.data[year] ?? null,
+  bloomberg: GLOBAL_RANKING_SOURCES.bloomberg.data[year] ?? null,
+  forbes: GLOBAL_RANKING_SOURCES.forbes.data[year] ?? null,
 }));
 
 const COLORS = {
-  ft: "#005543",
-  qs: "#0ea5e9",
-  bloomberg: "#f59e0b",
-  forbes: "#8b5cf6",
+  ft: GLOBAL_RANKING_SOURCES.ft.color,
+  qs: GLOBAL_RANKING_SOURCES.qs.color,
+  bloomberg: GLOBAL_RANKING_SOURCES.bloomberg.color,
+  forbes: GLOBAL_RANKING_SOURCES.forbes.color,
 };
 
 const LEGEND_LABELS: Record<string, string> = {
-  ft: "Financial Times",
-  qs: "QS",
-  bloomberg: "Bloomberg",
-  forbes: "Forbes",
+  ft: GLOBAL_RANKING_SOURCES.ft.label,
+  qs: GLOBAL_RANKING_SOURCES.qs.label,
+  bloomberg: GLOBAL_RANKING_SOURCES.bloomberg.label,
+  forbes: GLOBAL_RANKING_SOURCES.forbes.label,
 };
 
 export function GlobalRankingsChart() {
