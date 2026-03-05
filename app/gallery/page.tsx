@@ -9,6 +9,24 @@ const HERO_IMAGE_URL =
 
 export const revalidate = 3600;
 
+function formatUploadDate(createdTime?: string): string {
+  if (!createdTime) return "-";
+  const date = new Date(createdTime);
+  if (Number.isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function inferUploaderFromFileName(fileName: string): string | null {
+  const base = fileName.replace(/\.[^/.]+$/, "");
+  const parts = base.split(" - ").map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 2) return parts[parts.length - 1];
+  return null;
+}
+
 export default async function GalleryPage() {
   const [blogRows, driveFiles, galleryFolderFiles] = await Promise.all([
     getBlogSheetRows(),
@@ -45,8 +63,9 @@ export default async function GalleryPage() {
   const folderImageItems: GalleryItem[] = galleryFolderFiles.map((file) => ({
     id: `gallery-folder-${file.id}`,
     postTitle: file.name,
-    postedAt: "-",
-    author: "Gallery",
+    postedAt: formatUploadDate(file.createdTime),
+    author: file.ownerName || inferUploaderFromFileName(file.name) || "不明",
+    isGalleryUpload: true,
     hashtags: [],
     candidates: [
       `https://drive.google.com/thumbnail?id=${file.id}&sz=w2000`,
@@ -55,7 +74,7 @@ export default async function GalleryPage() {
     ],
   }));
   const deduped = new Map<string, GalleryItem>();
-  [...blogImageItems, ...folderImageItems].forEach((item) => {
+  [...folderImageItems, ...blogImageItems].forEach((item) => {
     const key = item.candidates[0] ?? item.id;
     if (!deduped.has(key)) deduped.set(key, item);
   });

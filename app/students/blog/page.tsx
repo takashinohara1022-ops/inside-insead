@@ -4,6 +4,7 @@ import Pagination from "../../../components/Pagination";
 import { StudentsBlogBoard } from "./_components/StudentsBlogBoard";
 import { getBlogSheetRows, getDriveImageFiles } from "../../../lib/googleData";
 import { parseBlogPosts } from "../../../lib/studentsBlog";
+import { Suspense } from "react";
 
 export const revalidate = 3600;
 
@@ -21,7 +22,15 @@ export default async function StudentsBlogPage() {
     <div className="min-h-screen bg-stone-50 text-slate-900">
       <PageHero src={HERO_IMAGE_URL} alt={title} title={title} />
       <div className="mx-auto max-w-6xl px-6 py-12 pb-14 sm:px-8 lg:px-12 lg:py-20">
-        <StudentsBlogBoard posts={posts} />
+        <Suspense
+          fallback={
+            <div className="rounded-xl border border-neutral-200 bg-white p-6 text-sm text-slate-600">
+              ブログを読み込み中です...
+            </div>
+          }
+        >
+          <StudentsBlogBoard posts={posts} />
+        </Suspense>
         <Pagination />
       </div>
     </div>

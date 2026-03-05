@@ -9,6 +9,7 @@ export type GalleryItem = {
   postTitle: string;
   postedAt: string;
   author: string;
+  isGalleryUpload?: boolean;
   hashtags: string[];
   candidates: string[];
 };
@@ -71,10 +72,17 @@ export function BlogGallery({ items }: { items: GalleryItem[] }) {
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-3 text-left">
-              <p className="line-clamp-2 text-sm font-semibold text-white">{item.postTitle}</p>
-              <p className="mt-1 text-[11px] text-white/85">
-                {item.postedAt} ・ {item.author}
-              </p>
+              {item.isGalleryUpload ? (
+                <>
+                  <p className="text-xs font-semibold text-white">{item.postedAt}</p>
+                  <p className="mt-1 text-[11px] text-white/85">{item.author}</p>
+                </>
+              ) : (
+                <>
+                  <p className="line-clamp-2 text-sm font-semibold text-white">{item.postTitle}</p>
+                  <p className="mt-1 text-[11px] text-white/85">{`${item.postedAt} ・ ${item.author}`}</p>
+                </>
+              )}
             </div>
           </button>
         ))}
@@ -91,10 +99,17 @@ export function BlogGallery({ items }: { items: GalleryItem[] }) {
           >
             <GalleryImage item={selected} className="max-h-[68vh] w-full rounded-lg object-contain bg-black/5" />
             <div className="mt-4 space-y-2">
-              <h3 className="text-lg font-semibold text-slate-900">{selected.postTitle}</h3>
-              <p className="text-sm text-slate-500">
-                {selected.postedAt} ・ {selected.author}
-              </p>
+              {selected.isGalleryUpload ? (
+                <>
+                  <p className="text-base font-semibold text-slate-900">{selected.postedAt}</p>
+                  <p className="text-sm text-slate-500">{selected.author}</p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-semibold text-slate-900">{selected.postTitle}</h3>
+                  <p className="text-sm text-slate-500">{`${selected.postedAt} ・ ${selected.author}`}</p>
+                </>
+              )}
               <div className="flex flex-wrap gap-1.5">
                 {selected.hashtags.map((tag) => (
                   <span

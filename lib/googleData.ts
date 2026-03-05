@@ -6,6 +6,8 @@ export type DriveImageFile = {
   id: string;
   name: string;
   mimeType: string;
+  createdTime?: string;
+  ownerName?: string;
 };
 
 function getEnv(name: string): string {
@@ -31,8 +33,12 @@ function toSheetRows(values: string[][]): SheetRow[] {
 async function fetchSheetRows(sheetId: string): Promise<SheetRow[]> {
   const apiKey = getEnv("GOOGLE_SHEETS_API_KEY");
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A:ZZ?key=${apiKey}`;
+  const cacheOptions =
+    process.env.NODE_ENV === "development"
+      ? { cache: "no-store" as const }
+      : { next: { revalidate: 3600 } };
   const response = await fetch(url, {
-    next: { revalidate: 3600 },
+    ...cacheOptions,
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch sheet rows: ${response.status}`);
@@ -52,17 +58,35 @@ export async function getBlogSheetRows(): Promise<SheetRow[]> {
 async function getDriveFilesByFolderId(folderId: string): Promise<DriveImageFile[]> {
   const apiKey = getEnv("GOOGLE_SHEETS_API_KEY");
   const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
-  const fields = encodeURIComponent("files(id,name,mimeType),nextPageToken");
+  const fields = encodeURIComponent("files(id,name,mimeType,createdTime,owners(displayName)),nextPageToken");
   const pageSize = 1000;
   const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=${pageSize}&key=${apiKey}`;
+  const cacheOptions =
+    process.env.NODE_ENV === "development"
+      ? { cache: "no-store" as const }
+      : { next: { revalidate: 3600 } };
   const response = await fetch(url, {
-    next: { revalidate: 3600 },
+    ...cacheOptions,
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch drive files: ${response.status}`);
   }
-  const json = (await response.json()) as { files?: DriveImageFile[] };
-  return json.files ?? [];
+  const json = (await response.json()) as {
+    files?: Array<{
+      id: string;
+      name: string;
+      mimeType: string;
+      createdTime?: string;
+      owners?: Array<{ displayName?: string }>;
+    }>;
+  };
+  return (json.files ?? []).map((file) => ({
+    id: file.id,
+    name: file.name,
+    mimeType: file.mimeType,
+    createdTime: file.createdTime,
+    ownerName: file.owners?.[0]?.displayName,
+  }));
 }
 
 export async function getDriveImageFiles(): Promise<DriveImageFile[]> {
