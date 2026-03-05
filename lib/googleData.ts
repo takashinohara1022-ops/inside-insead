@@ -18,6 +18,13 @@ function getEnv(name: string): string {
   return value;
 }
 
+function getOptionalEnv(name: string): string | null {
+  const value = process.env[name];
+  if (!value) return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 function toSheetRows(values: string[][]): SheetRow[] {
   if (!values.length) return [];
   const [headers, ...rows] = values;
@@ -53,6 +60,12 @@ export async function getProfileSheetRows(): Promise<SheetRow[]> {
 
 export async function getBlogSheetRows(): Promise<SheetRow[]> {
   return fetchSheetRows(getEnv("BLOG_SHEET_ID"));
+}
+
+export async function getGalleryUploadSheetRows(): Promise<SheetRow[]> {
+  const sheetId = getOptionalEnv("GALLERY_UPLOAD_SHEET_ID");
+  if (!sheetId) return [];
+  return fetchSheetRows(sheetId);
 }
 
 async function getDriveFilesByFolderId(folderId: string): Promise<DriveImageFile[]> {
