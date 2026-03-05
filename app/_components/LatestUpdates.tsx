@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   type BlogPost,
-  getCardBackgroundImage,
+  getMediaSources,
+  toYouTubeThumbnailUrl,
   parseBlogDate,
 } from "../../lib/studentsBlog";
 
@@ -60,6 +61,43 @@ function CardHeaderGraphic({ id }: { id: string }) {
   );
 }
 
+function CoverImage({ post }: { post: BlogPost }) {
+  const primaryMedia = getMediaSources(post)[0];
+  const candidates = useMemo(() => {
+    if (!primaryMedia) return [] as string[];
+    if (primaryMedia.kind === "youtube") {
+      const thumb = toYouTubeThumbnailUrl(post.youtubeLink);
+      return thumb ? [thumb] : [];
+    }
+    if (primaryMedia.kind === "image" && primaryMedia.driveFileId) {
+      return [
+        `https://drive.google.com/thumbnail?id=${primaryMedia.driveFileId}&sz=w2000`,
+        `https://drive.google.com/uc?export=view&id=${primaryMedia.driveFileId}`,
+        `https://drive.google.com/uc?export=download&id=${primaryMedia.driveFileId}`,
+      ];
+    }
+    if (primaryMedia.kind === "image" && primaryMedia.src) {
+      return [primaryMedia.src];
+    }
+    return [] as string[];
+  }, [post, primaryMedia]);
+  const [index, setIndex] = useState(0);
+
+  if (candidates.length === 0) return null;
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={candidates[index]}
+      alt={post.title}
+      className="absolute inset-0 h-full w-full object-cover object-center"
+      onError={() => {
+        if (index < candidates.length - 1) setIndex((prev) => prev + 1);
+      }}
+    />
+  );
+}
+
 export function LatestUpdates({ updates }: { updates: BlogPost[] }) {
   const latestThree = useMemo(() => updates.slice(0, 3), [updates]);
 
@@ -89,14 +127,7 @@ export function LatestUpdates({ updates }: { updates: BlogPost[] }) {
               className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-md transition-shadow hover:shadow-lg"
             >
               <div className="relative h-44 w-full overflow-hidden bg-[#005543]">
-                {getCardBackgroundImage(item) ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={getCardBackgroundImage(item)!}
-                    alt={item.title}
-                    className="absolute inset-0 h-full w-full object-cover object-center"
-                  />
-                ) : null}
+                <CoverImage post={item} />
                 <div className="absolute inset-0 bg-black/45" aria-hidden />
                 <CardHeaderGraphic id={item.id} />
                 <div className="absolute inset-0 flex flex-col justify-end px-5 pb-4 pt-3">

@@ -42,7 +42,11 @@ function getByHeaderMatch(row: SheetRow, keywords: string[]): string {
 export function parseBlogDate(value: string): Date | null {
   const text = value.trim();
   if (!text) return null;
-  const normalized = text.replace(/\./g, "/").replace(/-/g, "/");
+  const normalized = text
+    .replace(/[年.]/g, "/")
+    .replace(/[月]/g, "/")
+    .replace(/[日]/g, "")
+    .replace(/-/g, "/");
   const parsed = new Date(normalized);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed;
@@ -92,8 +96,8 @@ export function parseBlogPosts(rows: SheetRow[], driveFiles: DriveImageFile[] = 
       const title = getByHeaderMatch(row, ["タイトル"]);
       const body = getByHeaderMatch(row, ["本文"]);
       const themeRaw = getByHeaderMatch(row, ["テーマ", "ハッシュタグ"]);
-      const mediaRaw = getByHeaderMatch(row, ["写真や動画", "メディア"]);
-      const youtubeLink = getByHeaderMatch(row, ["Youtube", "YouTube", "リンク"]);
+      const mediaRaw = getByHeaderMatch(row, ["写真や動画", "写真", "画像", "メディア"]);
+      const youtubeLink = getByHeaderMatch(row, ["Youtube", "YouTube", "リンク", "リンクなど"]);
       const hashtags = splitByComma(themeRaw).map(normalizeHashtag).filter(Boolean);
       const mediaUrls = splitByComma(mediaRaw);
       const postedAtDate = parseBlogDate(postedAt);

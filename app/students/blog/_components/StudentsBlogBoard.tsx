@@ -10,6 +10,7 @@ import {
 } from "../../../../lib/studentsBlog";
 
 type CampusFilter = "all" | "fonty" | "singy";
+type SortOption = "newest" | "oldest";
 
 function DriveImage({
   fileId,
@@ -145,16 +146,41 @@ export function StudentsBlogBoard({ posts }: { posts: BlogPost[] }) {
   const searchParams = useSearchParams();
   const initialPostId = searchParams.get("post") ?? null;
   const [filter, setFilter] = useState<CampusFilter>("all");
+  const [sortOrder, setSortOrder] = useState<SortOption>("newest");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(initialPostId);
 
-  const filteredPosts = useMemo(
-    () => posts.filter((post) => campusMatches(post, filter)),
-    [posts, filter],
-  );
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    posts.forEach((post) => {
+      post.hashtags.forEach((tag) => {
+        if (tag) set.add(tag);
+      });
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "ja"));
+  }, [posts]);
+
+  const filteredPosts = useMemo(() => {
+    const campusFiltered = posts.filter((post) => campusMatches(post, filter));
+    const hashtagFiltered =
+      selectedTags.length === 0
+        ? campusFiltered
+        : campusFiltered.filter((post) => selectedTags.every((tag) => post.hashtags.includes(tag)));
+    const sorted = [...hashtagFiltered].sort((a, b) => {
+      const aTime = a.postedAtTimestamp ?? 0;
+      const bTime = b.postedAtTimestamp ?? 0;
+      return sortOrder === "newest" ? bTime - aTime : aTime - bTime;
+    });
+    return sorted;
+  }, [posts, filter, selectedTags, sortOrder]);
   const selectedPost = useMemo(
     () => posts.find((post) => post.id === selectedPostId) ?? null,
     [posts, selectedPostId],
   );
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]));
+  };
 
   const closeModal = () => {
     setSelectedPostId(null);
@@ -163,31 +189,84 @@ export function StudentsBlogBoard({ posts }: { posts: BlogPost[] }) {
 
   return (
     <section className="space-y-6">
-      <div
-        className="inline-flex flex-wrap gap-2 rounded-lg border border-neutral-200 bg-white p-1"
-        role="tablist"
-        aria-label="キャンパスで絞り込み"
-      >
-        {[
-          { key: "all" as const, label: "すべてのキャンパス" },
-          { key: "fonty" as const, label: "Fonty" },
-          { key: "singy" as const, label: "Singy" },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            role="tab"
-            aria-selected={filter === tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-              filter === tab.key
-                ? "bg-[#006633] text-white"
-                : "text-slate-700 hover:bg-neutral-100"
-            }`}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div
+            className="inline-flex flex-wrap gap-2 rounded-lg border border-neutral-200 bg-white p-1"
+            role="tablist"
+            aria-label="キャンパスで絞り込み"
           >
-            {tab.label}
-          </button>
-        ))}
+            {[
+              { key: "all" as const, label: "すべてのキャンパス" },
+              { key: "fonty" as const, label: "Fonty" },
+              { key: "singy" as const, label: "Singy" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={filter === tab.key}
+                onClick={() => setFilter(tab.key)}
+                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  filter === tab.key
+                    ? "bg-[#006633] text-white"
+                    : "text-slate-700 hover:bg-neutral-100"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+            並び替え
+            <select
+              value={sortOrder}
+              onChange={(event) => setSortOrder(event.target.value as SortOption)}
+              className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#006633] focus:outline-none"
+            >
+              <option value="newest">投稿日時が新しい順</option>
+              <option value="oldest">投稿日時が古い順</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="rounded-lg border border-neutral-200 bg-white p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-xs font-medium text-slate-600">ハッシュタグで絞り込み</p>
+            {selectedTags.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setSelectedTags([])}
+                className="text-xs font-medium text-[#006633] hover:underline"
+              >
+                クリア
+              </button>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {allTags.length > 0 ? (
+              allTags.map((tag) => {
+                const selected = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
+                      selected
+                        ? "bg-[#006633] text-white"
+                        : "bg-green-100 text-green-800 hover:bg-green-200"
+                    }`}
+                  >
+                    #{tag}
+                  </button>
+                );
+              })
+            ) : (
+              <p className="text-xs text-slate-500">ハッシュタグがありません。</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {posts.length === 0 ? (

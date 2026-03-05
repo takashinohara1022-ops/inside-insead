@@ -46,8 +46,8 @@ const SUMMARY_TITLES: { key: keyof ProfileSummary; title: string }[] = [
   { key: "whyInseadTop3", title: "Why INSEAD? 判断軸カテゴリー Top 3（選択回数）" },
   { key: "campus", title: "スターティングキャンパス (Fonty / Singy)" },
   { key: "sponsorship", title: "社費・私費" },
-  { key: "gmatScoreDistribution", title: "GMAT Focusスコア分布（受験者のみ）" },
-  { key: "greScoreDistribution", title: "GREスコア分布（受験者のみ）" },
+  { key: "gmatScoreDistribution", title: "GMAT Focusスコア分布" },
+  { key: "greScoreDistribution", title: "GREスコア分布" },
 ];
 
 function toHalfWidth(value: string): string {
