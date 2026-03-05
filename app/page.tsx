@@ -4,8 +4,10 @@ import { ArrowRight, Coffee, Users } from "lucide-react";
 import { ClassProfileDashboard } from "./_components/ClassProfileDashboard";
 import { GlobalRankingsChart } from "./_components/GlobalRankingsChart";
 import { LatestUpdates } from "./_components/LatestUpdates";
+import { getBlogSheetRows, getDriveImageFiles, getProfileSheetRows } from "../lib/googleData";
+import { parseBlogPosts } from "../lib/studentsBlog";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 const SECTION_HEADING_CLASS =
   "mb-6 text-lg font-semibold tracking-tight text-slate-900 sm:text-xl";
@@ -29,7 +31,14 @@ const REGULAR_SPONSORS = [
   { id: "13", name: "その他 J" },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const [profileRows, blogRows, driveFiles] = await Promise.all([
+    getProfileSheetRows(),
+    getBlogSheetRows(),
+    getDriveImageFiles(),
+  ]);
+  const latestPosts = parseBlogPosts(blogRows, driveFiles);
+
   return (
     <div className="min-h-screen bg-stone-50 text-slate-900">
       <div className="relative isolate">
@@ -105,10 +114,10 @@ export default function Home() {
             <h2 id="class-profile-heading" className={SECTION_HEADING_CLASS}>
               在校生プロフィール内訳 (Class Profile)
             </h2>
-            <ClassProfileDashboard />
+            <ClassProfileDashboard rows={profileRows} />
           </section>
           <main className="flex flex-1 flex-col gap-12 lg:gap-16 mt-12 lg:mt-16">
-            <LatestUpdates />
+            <LatestUpdates updates={latestPosts} />
 
             <section
               id="rankings"

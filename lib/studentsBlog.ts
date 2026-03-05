@@ -1,12 +1,9 @@
-import Papa from "papaparse";
-
-export const STUDENTS_BLOG_CSV_URL =
-  "https://docs.google.com/spreadsheets/d/1AmUHbN3E-AN_Vmc3Wc2LU951_YihjP2o1xKyLY1cypI/export?format=csv";
+import type { DriveImageFile, SheetRow } from "./googleData";
 
 export type BlogPost = {
   id: string;
   postedAt: string;
-  postedAtDate: Date | null;
+  postedAtTimestamp: number | null;
   author: string;
   title: string;
   body: string;
@@ -14,9 +11,8 @@ export type BlogPost = {
   youtubeLink: string;
   campus: "Fonty" | "Singy" | "Other";
   hashtags: string[];
+  mediaFiles: DriveImageFile[];
 };
-
-export type CsvRow = Record<string, string | undefined>;
 
 export type MediaKind = "youtube" | "image" | "video" | "none";
 export type MediaSource = {
@@ -33,7 +29,7 @@ function normalizeForMatch(value: string): string {
   return normalizeText(value).toLowerCase();
 }
 
-function getByHeaderMatch(row: CsvRow, keywords: string[]): string {
+function getByHeaderMatch(row: SheetRow, keywords: string[]): string {
   const entries = Object.entries(row);
   for (const [header, rawValue] of entries) {
     const normalizedHeader = normalizeForMatch(header);
@@ -70,10 +66,26 @@ function normalizeHashtag(tag: string): string {
   return tag.replace(/^#/, "").trim();
 }
 
-export function parseBlogPosts(csvText: string): BlogPost[] {
-  const parsed = Papa.parse<CsvRow>(csvText, { header: true, skipEmptyLines: true });
+function resolveDriveFilesFromMediaRaw(mediaRaw: string, driveFiles: DriveImageFile[]): DriveImageFile[] {
+  const tokens = splitByComma(mediaRaw);
+  if (tokens.length === 0) return [];
+  const resolved = tokens
+    .map((token) => {
+      const tokenId = extractDriveFileId(token);
+      if (tokenId) {
+        const byId = driveFiles.find((file) => file.id === tokenId);
+        return byId ?? { id: tokenId, name: token, mimeType: "" };
+      }
+      return driveFiles.find((file) => file.name === token || file.name.includes(token));
+    })
+    .filter((file): file is DriveImageFile => Boolean(file));
+  const byId = new Map<string, DriveImageFile>();
+  resolved.forEach((file) => byId.set(file.id, file));
+  return Array.from(byId.values());
+}
 
-  return parsed.data
+export function parseBlogPosts(rows: SheetRow[], driveFiles: DriveImageFile[] = []): BlogPost[] {
+  return rows
     .map((row, index) => {
       const postedAt = getByHeaderMatch(row, ["投稿日"]);
       const author = getByHeaderMatch(row, ["投稿者"]);
@@ -85,11 +97,12 @@ export function parseBlogPosts(csvText: string): BlogPost[] {
       const hashtags = splitByComma(themeRaw).map(normalizeHashtag).filter(Boolean);
       const mediaUrls = splitByComma(mediaRaw);
       const postedAtDate = parseBlogDate(postedAt);
+      const mediaFiles = resolveDriveFilesFromMediaRaw(mediaRaw, driveFiles);
 
       return {
         id: `${title || "blog"}-${index}`,
         postedAt,
-        postedAtDate,
+        postedAtTimestamp: postedAtDate?.getTime() ?? null,
         author: author || "匿名",
         title: title || "無題",
         body: body || "",
@@ -97,11 +110,12 @@ export function parseBlogPosts(csvText: string): BlogPost[] {
         youtubeLink,
         campus: detectCampus(hashtags),
         hashtags,
+        mediaFiles,
       } satisfies BlogPost;
     })
     .sort((a, b) => {
-      const aTime = a.postedAtDate?.getTime() ?? 0;
-      const bTime = b.postedAtDate?.getTime() ?? 0;
+      const aTime = a.postedAtTimestamp ?? 0;
+      const bTime = b.postedAtTimestamp ?? 0;
       return bTime - aTime;
     });
 }
@@ -158,7 +172,13 @@ export function getMediaSources(post: BlogPost): MediaSource[] {
   const youtubeEmbed = toYouTubeEmbedUrl(post.youtubeLink);
   if (youtubeEmbed) return [{ kind: "youtube", src: youtubeEmbed }];
 
-  const mediaSources = post.mediaUrls
+  const fromDriveFiles = post.mediaFiles.map((file) => ({
+    kind: file.mimeType.startsWith("video/") ? ("video" as const) : ("image" as const),
+    src: `https://drive.google.com/uc?export=view&id=${file.id}`,
+    driveFileId: file.id,
+  }));
+
+  const fromUrls = post.mediaUrls
     .map((url) => {
       const driveFileId = extractDriveFileId(url);
       const src = driveFileId ? `https://drive.google.com/uc?export=view&id=${driveFileId}` : url;
@@ -170,7 +190,15 @@ export function getMediaSources(post: BlogPost): MediaSource[] {
     })
     .filter((item) => Boolean(item.src));
 
-  if (mediaSources.length > 0) return mediaSources;
+  const mediaSources = [...fromDriveFiles, ...fromUrls];
+  const deduped = new Map<string, MediaSource>();
+  mediaSources.forEach((item, index) => {
+    const key = item.driveFileId ?? item.src ?? `unknown-${index}`;
+    if (!deduped.has(key)) deduped.set(key, item);
+  });
+  const uniqueMedia = Array.from(deduped.values());
+
+  if (uniqueMedia.length > 0) return uniqueMedia;
   return [{ kind: "none" }];
 }
 

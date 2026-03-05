@@ -1,13 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Papa from "papaparse";
-import { ChevronDown, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
-
-const CSV_URL =
-  "https://docs.google.com/spreadsheets/d/1gGPva62UWo_U0QidDD7oPL1Qgs-NtBLisKgdWIO7FbY/export?format=csv";
-
-type CsvRow = Record<string, string | undefined>;
+import { useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import type { SheetRow } from "../../../../lib/googleData";
 
 type Tag = {
   key: string;
@@ -82,7 +77,7 @@ function dedupeTags(tags: Tag[]): Tag[] {
   return Array.from(map.values());
 }
 
-function getByHeaderMatch(row: CsvRow, keywords: string[]): string {
+function getByHeaderMatch(row: SheetRow, keywords: string[]): string {
   const entries = Object.entries(row);
   for (const [header, rawValue] of entries) {
     const normalizedHeader = normalizeForMatch(header);
@@ -126,40 +121,106 @@ function isClassTagLabel(label: string): boolean {
   return /^\d{2}[JD]$/i.test(normalizeText(label));
 }
 
-function parseProfiles(csvText: string): StudentProfile[] {
-  const parsed = Papa.parse<CsvRow>(csvText, { header: true, skipEmptyLines: true });
+function normalizeWhyAxisLabel(value: string): string {
+  const normalized = normalizeText(value);
+  if (!normalized) return "";
+  const key = normalizeForMatch(normalized);
+  if (key.includes("費用") || key.includes("roi")) return "費用/ROI";
+  if (key.includes("キャリア") || key.includes("就職")) return "キャリア/就職実績";
+  if (key.includes("ブランド") || key.includes("ranking")) return "ブランド";
+  if (key.includes("カルチャー") || key.includes("diversity") || key.includes("多様")) {
+    return "カルチャー/Diversity";
+  }
+  if (key.includes("network") || key.includes("ネットワーク") || key.includes("alumni")) {
+    return "Alumni/ネットワーク";
+  }
+  if (key.includes("教授") || key.includes("授業") || key.includes("academic")) return "教授・授業";
+  if (key.includes("プログラム") || key.includes("交換留学") || key.includes("1年制")) {
+    return "プログラム(交換留学,1年制等)";
+  }
+  if (key.includes("その他")) return "その他";
+  return normalized;
+}
 
-  return parsed.data.map((row, index) => {
+function normalizeMajorIndustry(value: string): string {
+  const normalized = normalizeText(value);
+  if (!normalized) return "";
+  const key = normalizeForMatch(normalized);
+  if (key.includes("consult") || key.includes("コンサル")) return "コンサル";
+  if (key.includes("金融")) return "金融";
+  if (key.includes("商社")) return "商社";
+  if (key.includes("メーカー")) return "メーカー";
+  if (key.includes("tech") || key.includes("テック")) return "テック";
+  if (key.includes("そのほか") || key.includes("その他")) return "その他";
+  return normalized;
+}
+
+function parseProfiles(rows: SheetRow[]): StudentProfile[] {
+  return rows.map((row, index) => {
     const initials = getByHeaderMatch(row, ["氏名イニシャル", "initial"]);
     const classLabel = parseClassLabel(
-      getByHeaderMatch(row, ["INSEAD卒業年度", "gradyear"]),
+      getByHeaderMatch(row, ["INSEAD卒業年度", "INSEAD卒業年", "gradyear"]),
       getByHeaderMatch(row, ["INSEAD卒業月", "gradmonth"]),
     );
-    const homeCampus = getByHeaderMatch(row, ["Home Campus", "campus"]);
-    const yearsAtEntry = getByHeaderMatch(row, ["入学時社会人歴", "社会人歴"]);
-    const careerMajor = getByHeaderMatch(row, ["キャリアバックグラウンド大分類", "industry"]);
+    const homeCampus = getByHeaderMatch(row, ["Home Campus", "ホームキャンパス", "campus"]);
+    const yearsAtEntry = getByHeaderMatch(row, ["入学時社会人歴", "社会人歴", "社会人何年目"]);
+    const careerMajor = normalizeMajorIndustry(
+      getByHeaderMatch(row, ["キャリアバックグラウンド大分類", "出身業界(大分類)", "industry"]),
+    );
     const careerBackgrounds = splitMultiValue(
-      getByHeaderMatch(row, ["キャリアバックグラウンド", "複数選択可能"]),
+      getByHeaderMatch(row, [
+        "キャリアバックグラウンド",
+        "出身業界(小分類)",
+        "複数選択可能",
+      ]),
     ).map(toTag);
     const sponsor = getByHeaderMatch(row, ["社費or私費", "sponsor"]);
-    const overseasExperience = getByHeaderMatch(row, ["海外経験", "overseas"]);
+    const overseasExperience = getByHeaderMatch(row, [
+      "海外経験(数か月以上の滞在)",
+      "海外経験(半年以上の滞在)",
+      "海外経験",
+      "overseas",
+    ]);
     const englishTest = getByHeaderMatch(row, ["英語試験"]);
     const englishTestScore = getByHeaderMatch(row, ["英語試験スコア"]);
     const aptitudeTest = getByHeaderMatch(row, ["能力試験"]);
     const aptitudeTestScore = getByHeaderMatch(row, ["能力試験スコア"]);
     const mbaAdvisoryService = getByHeaderMatch(
       row,
-      ["利用したMBAアドバイザリーサービス名", "アドバイザリーサービス名"],
+      [
+        "利用したMBAアドバイザリーサービス名",
+        "利用したカウンセリング",
+        "アドバイザリーサービス名",
+      ],
     );
-    const otherMbaApplied = getByHeaderMatch(row, ["他MBA併願先"]);
-    const otherMbaAccepted = getByHeaderMatch(row, ["他MBA合格先"]);
+    const otherMbaApplied = getByHeaderMatch(row, ["他MBA併願先", "併願先した学校"]);
+    const otherMbaAccepted = getByHeaderMatch(row, ["他MBA合格先", "併願合格先"]);
     const whyCategories = splitMultiValue(
-      getByHeaderMatch(row, ["Why INSEAD? 判断軸カテゴリー", "Why INSEAD？ 判断軸カテゴリー"]),
-    ).map(toTag);
-    const whyFreeText = getByHeaderMatch(row, ["Why INSEAD？", "自由記述"]);
+      getByHeaderMatch(row, [
+        "Why INSEAD? 判断軸カテゴリー",
+        "Why INSEAD？ 判断軸カテゴリー",
+        "Why INSEAD? 判断軸",
+      ]),
+    )
+      .map(normalizeWhyAxisLabel)
+      .filter(Boolean)
+      .map(toTag);
+    const whyFreeText =
+      getByHeaderMatch(row, [
+        "Why INSEAD? *500文字以内",
+        "Why INSEAD？ *500文字以内",
+        "Why INSEAD?（自由記述）",
+        "Why INSEAD？（自由記述）",
+        "Why INSEAD? (自由記述)",
+        "Why INSEAD？ (自由記述)",
+      ]) || getByHeaderMatch(row, ["自由記述"]);
     const processAdvice = getByHeaderMatch(
       row,
-      ["MBA/INSEADアプリケーションプロセスにおけるアドバイス", "アプリケーションプロセス"],
+      [
+        "MBA/INSEADアプリケーションプロセスにおけるアドバイス",
+        "受験生へのアドバイス/応援/メッセージ",
+        "アプリケーションプロセス",
+      ],
     );
     const profileTags = splitMultiValue(
       getByHeaderMatch(row, ["プロフィールハッシュタグ", "備考"]),
@@ -256,6 +317,15 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function formatYearsAtEntry(value: string): string {
+  const normalized = normalizeText(value);
+  if (!normalized || normalized === "-") return "-";
+  if (normalized.includes("年目")) return normalized;
+  const numeric = normalized.match(/\d+(\.\d+)?/)?.[0];
+  if (!numeric) return normalized;
+  return `${numeric}年目`;
+}
+
 function AccordionSection({
   title,
   open,
@@ -272,14 +342,21 @@ function AccordionSection({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between rounded-lg bg-white px-4 py-3 text-left text-sm font-semibold text-slate-900 transition hover:bg-neutral-50"
+        aria-expanded={open}
+        className="group flex w-full items-center justify-between rounded-lg bg-white px-4 py-3 text-left text-sm font-semibold text-slate-900 transition hover:bg-neutral-50"
       >
         <span>{title}</span>
-        <span className="inline-flex items-center gap-2">
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-300 bg-white text-slate-700">
-            {open ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          </span>
-          <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${open ? "rotate-180" : "rotate-0"}`} />
+        <span
+          className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition-all ${
+            open
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-slate-200 bg-white text-slate-500 group-hover:border-slate-300 group-hover:text-slate-700"
+          }`}
+          aria-hidden
+        >
+          <ChevronDown
+            className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : "rotate-0"}`}
+          />
         </span>
       </button>
       {open ? <div className="space-y-4 px-4 py-4">{children}</div> : null}
@@ -346,7 +423,7 @@ function ProfileCard({
         >
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <InfoRow label="入学時社会人歴(何年目)" value={profile.yearsAtEntry} />
+              <InfoRow label="入学時社会人歴(何年目)" value={formatYearsAtEntry(profile.yearsAtEntry)} />
               <InfoRow label="海外経験" value={profile.overseasExperience} />
             </div>
 
@@ -521,40 +598,18 @@ function ProfileCard({
   );
 }
 
-export function StudentsProfilesDirectory() {
-  const [profiles, setProfiles] = useState<StudentProfile[]>([]);
+export function StudentsProfilesDirectory({ rows }: { rows: SheetRow[] }) {
+  const sectionTopRef = useRef<HTMLDivElement | null>(null);
   const [selectedYears, setSelectedYears] = useState<Tag[]>([]);
   const [selectedOtherTags, setSelectedOtherTags] = useState<Tag[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [slideClass, setSlideClass] = useState("translate-x-0 opacity-100");
 
-  useEffect(() => {
-    const controller = new AbortController();
-    async function load() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(CSV_URL, { cache: "no-store", signal: controller.signal });
-        if (!response.ok) {
-          throw new Error(`CSVの取得に失敗しました (${response.status})`);
-        }
-        const csvText = await response.text();
-        const parsedProfiles = parseProfiles(csvText).sort((a, b) => b.classRank - a.classRank);
-        setProfiles(parsedProfiles);
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : "データ取得中にエラーが発生しました。");
-      } finally {
-        if (!controller.signal.aborted) setIsLoading(false);
-      }
-    }
-    load();
-    return () => controller.abort();
-  }, [reloadKey]);
+  const profiles = useMemo(
+    () => parseProfiles(rows).sort((a, b) => b.classRank - a.classRank),
+    [rows],
+  );
 
   const yearTags = useMemo(() => {
     const map = new Map<string, Tag>();
@@ -595,11 +650,11 @@ export function StudentsProfilesDirectory() {
     );
   }, [profiles, selectedYearKeys, selectedOtherTagKeys]);
 
-  useEffect(() => {
+  const resetPaginationState = () => {
     setPageIndex(0);
     setSlideClass("translate-x-0 opacity-100");
     setIsAnimating(false);
-  }, [selectedYearKeys, selectedOtherTagKeys, profiles.length]);
+  };
 
   const totalPages = Math.max(1, Math.ceil(filteredProfiles.length / 10));
   const pagedProfiles = useMemo(
@@ -608,6 +663,7 @@ export function StudentsProfilesDirectory() {
   );
 
   const toggleYearTag = (tag: Tag) => {
+    resetPaginationState();
     setSelectedYears((prev) => {
       if (prev.some((item) => item.key === tag.key)) return prev.filter((item) => item.key !== tag.key);
       return [...prev, tag];
@@ -619,6 +675,7 @@ export function StudentsProfilesDirectory() {
       toggleYearTag(tag);
       return;
     }
+    resetPaginationState();
     setSelectedOtherTags((prev) => {
       if (prev.some((item) => item.key === tag.key)) {
         return prev.filter((item) => item.key !== tag.key);
@@ -628,6 +685,7 @@ export function StudentsProfilesDirectory() {
   };
 
   const removeOtherTag = (key: string) => {
+    resetPaginationState();
     setSelectedOtherTags((prev) => prev.filter((tag) => tag.key !== key));
   };
 
@@ -635,6 +693,7 @@ export function StudentsProfilesDirectory() {
     if (isAnimating) return;
     if (targetPage < 0 || targetPage >= totalPages) return;
     if (targetPage === pageIndex) return;
+    sectionTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     const direction = targetPage > pageIndex ? "next" : "prev";
     setIsAnimating(true);
     setSlideClass(direction === "next" ? "-translate-x-8 opacity-0" : "translate-x-8 opacity-0");
@@ -653,6 +712,7 @@ export function StudentsProfilesDirectory() {
 
   return (
     <section className="space-y-6">
+      <div ref={sectionTopRef} />
       <div className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-5">
         <div>
           <p className="text-sm font-semibold text-slate-800">在学年度</p>
@@ -672,11 +732,11 @@ export function StudentsProfilesDirectory() {
           </div>
         </div>
 
-        {selectedOtherTags.length > 0 ? (
-          <div className="mt-5 border-t border-neutral-100 pt-4">
-            <p className="text-sm font-semibold text-slate-800">その他選択中</p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {selectedOtherTags.map((tag) => (
+        <div className="mt-5 border-t border-neutral-100 pt-4">
+          <p className="text-sm font-semibold text-slate-800">その他選択中</p>
+          <div className="mt-3 flex min-h-8 flex-wrap items-center gap-2">
+            {selectedOtherTags.length > 0 ? (
+              selectedOtherTags.map((tag) => (
                 <span
                   key={tag.key}
                   className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-sm text-emerald-800"
@@ -691,35 +751,17 @@ export function StudentsProfilesDirectory() {
                     ×
                   </button>
                 </span>
-              ))}
-            </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">未選択</p>
+            )}
           </div>
-        ) : null}
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-              <div className="h-6 w-20 animate-pulse rounded bg-gray-100" />
-              <div className="mt-4 space-y-3">
-                {Array.from({ length: 8 }).map((__, j) => (
-                  <div key={j} className="h-4 animate-pulse rounded bg-gray-100" />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : error ? (
-        <div className="rounded-xl border border-red-200 bg-white p-6 text-center shadow-sm">
-          <p className="text-sm text-red-700">{error}</p>
-          <button
-            type="button"
-            onClick={() => setReloadKey((prev) => prev + 1)}
-            className="mt-3 rounded-md bg-[#006633] px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
-          >
-            再読み込み
-          </button>
+      {!rows.length ? (
+        <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center shadow-sm">
+          <p className="text-sm text-slate-600">プロフィールデータがまだありません。</p>
         </div>
       ) : (
         <>

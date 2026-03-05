@@ -1,12 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Papa from "papaparse";
+import { useMemo, useState } from "react";
+import type { SheetRow } from "../../lib/googleData";
 
-const CSV_URL =
-  "https://docs.google.com/spreadsheets/d/1gGPva62UWo_U0QidDD7oPL1Qgs-NtBLisKgdWIO7FbY/export?format=csv";
-
-type CsvRow = Record<string, string | undefined>;
 type BarItem = { label: string; value: number };
 type CountItem = { label: string; count: number };
 type ClassTab = {
@@ -50,7 +46,7 @@ const SUMMARY_TITLES: { key: keyof ProfileSummary; title: string }[] = [
   { key: "whyInseadTop3", title: "Why INSEAD? 判断軸カテゴリー Top 3（選択回数）" },
   { key: "campus", title: "スターティングキャンパス (Fonty / Singy)" },
   { key: "sponsorship", title: "社費・私費" },
-  { key: "gmatScoreDistribution", title: "GMATスコア分布（受験者のみ）" },
+  { key: "gmatScoreDistribution", title: "GMAT Focusスコア分布（受験者のみ）" },
   { key: "greScoreDistribution", title: "GREスコア分布（受験者のみ）" },
 ];
 
@@ -72,7 +68,7 @@ function normalizeForMatch(value: string): string {
   return normalizeText(value).replace(/\s+/g, "").toLowerCase();
 }
 
-function getByHeaderMatch(row: CsvRow, keywords: string[]): string {
+function getByHeaderMatch(row: SheetRow, keywords: string[]): string {
   const entries = Object.entries(row);
   for (const [header, rawValue] of entries) {
     const normalizedHeader = normalizeForMatch(header);
@@ -118,14 +114,11 @@ function getClassMeta(gradYear: number | null, gradMonth: string) {
   };
 }
 
-function parseStudentProfiles(csvText: string): StudentProfile[] {
-  const parsed = Papa.parse<CsvRow>(csvText, {
-    header: true,
-    skipEmptyLines: true,
-  });
-
-  return parsed.data.map((row) => {
-    const gradYear = parseGradYear(getByHeaderMatch(row, ["INSEAD卒業年度", "gradyear"]));
+function parseStudentProfiles(rows: SheetRow[]): StudentProfile[] {
+  return rows.map((row) => {
+    const gradYear = parseGradYear(
+      getByHeaderMatch(row, ["INSEAD卒業年度", "INSEAD卒業年", "gradyear"]),
+    );
     const gradMonth = getByHeaderMatch(row, ["INSEAD卒業月", "gradmonth"]);
     const classMeta = getClassMeta(gradYear, gradMonth);
 
@@ -134,18 +127,32 @@ function parseStudentProfiles(csvText: string): StudentProfile[] {
       gradMonth,
       classKey: classMeta.key,
       classDisplayLabel: classMeta.label,
-      industry: getByHeaderMatch(row, ["キャリアバックグラウンド大分類", "industry"]),
+      industry: getByHeaderMatch(row, [
+        "キャリアバックグラウンド大分類",
+        "出身業界(大分類)",
+        "industry",
+      ]),
       sponsor: getByHeaderMatch(row, ["社費or私費", "sponsor"]),
-      campus: getByHeaderMatch(row, ["Home Campus", "campus"]),
+      campus: getByHeaderMatch(row, ["Home Campus", "ホームキャンパス", "campus"]),
       aptitudeTest: getByHeaderMatch(row, ["能力試験", "aptitude", "gmat", "gre"]),
       aptitudeScore: parseNumber(getByHeaderMatch(row, ["能力試験スコア", "aptitudescore"])),
-      overseasExperience: getByHeaderMatch(row, ["海外経験", "overseas"]),
+      overseasExperience: getByHeaderMatch(row, [
+        "海外経験(数か月以上の滞在)",
+        "海外経験(半年以上の滞在)",
+        "海外経験",
+        "overseas",
+      ]),
       yearsOfExperienceAtEntry: parseNumber(
-        getByHeaderMatch(row, ["入学時社会人歴", "社会人歴", "yearsofexperience"]),
+        getByHeaderMatch(row, ["入学時社会人歴", "社会人歴", "社会人何年目", "yearsofexperience"]),
       ),
       whyInseadCategoriesRaw: getByHeaderMatch(
         row,
-        ["Why INSEAD? 判断軸カテゴリー", "Why INSEAD？ 判断軸カテゴリー", "判断軸カテゴリー"],
+        [
+          "Why INSEAD? 判断軸カテゴリー",
+          "Why INSEAD？ 判断軸カテゴリー",
+          "Why INSEAD? 判断軸",
+          "判断軸カテゴリー",
+        ],
       ),
     };
   });
@@ -218,6 +225,13 @@ function sortByLabelOrder(items: BarItem[], order: string[]): BarItem[] {
 function normalizeIndustryLabel(industry: string): string {
   const value = industry || "未回答";
   if (!value.trim()) return "未回答";
+  const key = normalizeForMatch(value);
+  if (key.includes("consult") || key.includes("コンサル")) return "コンサル";
+  if (key.includes("金融")) return "金融";
+  if (key.includes("商社")) return "商社";
+  if (key.includes("メーカー")) return "メーカー";
+  if (key.includes("tech") || key.includes("テック")) return "テック";
+  if (key.includes("そのほか") || key.includes("その他")) return "その他";
   return value;
 }
 
@@ -237,7 +251,8 @@ function classifyCampus(campus: string): "Fonty" | "Singy" | "その他" {
 }
 
 function isGmatTaker(test: string): boolean {
-  return normalizeForMatch(test).includes("gmat");
+  const normalized = normalizeForMatch(test);
+  return normalized.includes("gmatfocus") || (normalized.includes("gmat") && normalized.includes("focus"));
 }
 
 function isGreTaker(test: string): boolean {
@@ -298,12 +313,33 @@ function classifyEntryWorkYears(year: number | null): "1-3年目" | "4-6年目" 
   return "10年以上";
 }
 
+function normalizeWhyAxisLabel(value: string): string {
+  const normalized = normalizeText(value);
+  if (!normalized) return "";
+  const key = normalizeForMatch(normalized);
+  if (key.includes("費用") || key.includes("roi")) return "費用/ROI";
+  if (key.includes("キャリア") || key.includes("就職")) return "キャリア/就職実績";
+  if (key.includes("ブランド") || key.includes("ranking")) return "ブランド";
+  if (key.includes("カルチャー") || key.includes("diversity") || key.includes("多様")) {
+    return "カルチャー/Diversity";
+  }
+  if (key.includes("network") || key.includes("ネットワーク") || key.includes("alumni")) {
+    return "Alumni/ネットワーク";
+  }
+  if (key.includes("教授") || key.includes("授業") || key.includes("academic")) return "教授・授業";
+  if (key.includes("プログラム") || key.includes("交換留学") || key.includes("1年制")) {
+    return "プログラム(交換留学,1年制等)";
+  }
+  if (key.includes("その他")) return "その他";
+  return normalized;
+}
+
 function parseWhyInseadCategories(raw: string): string[] {
   const normalized = normalizeText(raw);
   if (!normalized) return [];
   return normalized
     .split(/[,、，]/)
-    .map((part) => normalizeText(part))
+    .map((part) => normalizeWhyAxisLabel(part))
     .filter((part) => part.length > 0 && part !== "* none");
 }
 
@@ -420,6 +456,26 @@ function buildSummary(profiles: StudentProfile[]): ProfileSummary {
   };
 }
 
+function buildRespondentCountByChart(profiles: StudentProfile[]): Record<keyof ProfileSummary, number> {
+  const baseCount = profiles.length;
+  const whyCount = profiles.filter(
+    (profile) => parseWhyInseadCategories(profile.whyInseadCategoriesRaw).length > 0,
+  ).length;
+  const gmatFocusCount = profiles.filter((profile) => isGmatTaker(profile.aptitudeTest)).length;
+  const greCount = profiles.filter((profile) => isGreTaker(profile.aptitudeTest)).length;
+
+  return {
+    industry: baseCount,
+    sponsorship: baseCount,
+    campus: baseCount,
+    overseas: baseCount,
+    entryWorkYears: baseCount,
+    whyInseadTop3: whyCount,
+    gmatScoreDistribution: gmatFocusCount,
+    greScoreDistribution: greCount,
+  };
+}
+
 function buildClassTabs(profiles: StudentProfile[]): ClassTab[] {
   const unique = new Map<string, ClassTab>();
   for (const profile of profiles) {
@@ -494,52 +550,23 @@ function HorizontalCountBarChart({ items }: { items: CountItem[] }) {
   );
 }
 
-export function ClassProfileDashboard() {
-  const [profiles, setProfiles] = useState<StudentProfile[]>([]);
+export function ClassProfileDashboard({ rows }: { rows: SheetRow[] }) {
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function loadCsv() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(CSV_URL, {
-          signal: controller.signal,
-          cache: "no-store",
-        });
-        if (!response.ok) {
-          throw new Error(`CSVの取得に失敗しました (${response.status})`);
-        }
-        const csvText = await response.text();
-        const parsedProfiles = parseStudentProfiles(csvText);
-        setProfiles(parsedProfiles);
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : "データ取得中にエラーが発生しました。");
-      } finally {
-        if (!controller.signal.aborted) setIsLoading(false);
-      }
-    }
-    loadCsv();
-    return () => controller.abort();
-  }, [reloadKey]);
+  const profiles = useMemo(() => parseStudentProfiles(rows), [rows]);
 
   const classTabs = useMemo(() => buildClassTabs(profiles), [profiles]);
-
-  useEffect(() => {
-    setSelectedClasses((prev) => prev.filter((key) => classTabs.some((tab) => tab.key === key)));
-  }, [classTabs]);
+  const availableClassKeys = useMemo(() => new Set(classTabs.map((tab) => tab.key)), [classTabs]);
+  const activeSelectedClasses = useMemo(
+    () => selectedClasses.filter((key) => availableClassKeys.has(key)),
+    [selectedClasses, availableClassKeys],
+  );
 
   const filteredProfiles = useMemo(() => {
-    if (selectedClasses.length === 0) return profiles;
+    if (activeSelectedClasses.length === 0) return profiles;
     return profiles.filter(
-      (profile) => profile.classKey != null && selectedClasses.includes(profile.classKey),
+      (profile) => profile.classKey != null && activeSelectedClasses.includes(profile.classKey),
     );
-  }, [profiles, selectedClasses]);
+  }, [profiles, activeSelectedClasses]);
 
   const toggleClass = (classKey: string) => {
     setSelectedClasses((prev) =>
@@ -548,40 +575,15 @@ export function ClassProfileDashboard() {
   };
 
   const summary = useMemo(() => buildSummary(filteredProfiles), [filteredProfiles]);
+  const respondentCountByChart = useMemo(
+    () => buildRespondentCountByChart(filteredProfiles),
+    [filteredProfiles],
+  );
 
-  if (isLoading) {
+  if (!rows.length) {
     return (
-      <div className="rounded-xl border border-neutral-200 bg-white shadow-lg">
-        <div className="border-b border-neutral-100 px-5 py-5 sm:px-6 sm:py-6">
-          <div className="h-9 w-full animate-pulse rounded-lg bg-gray-100 sm:w-96" />
-        </div>
-        <div className="grid grid-cols-1 gap-6 p-5 md:grid-cols-2 sm:p-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-lg border border-neutral-100 bg-neutral-50/50 p-4 sm:p-5">
-              <div className="mb-4 h-4 w-40 animate-pulse rounded bg-gray-100" />
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((__, j) => (
-                  <div key={j} className="h-6 animate-pulse rounded bg-gray-100" />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border border-red-200 bg-white p-6 text-center shadow-lg">
-        <p className="text-sm text-red-700">{error}</p>
-        <button
-          type="button"
-          onClick={() => setReloadKey((prev) => prev + 1)}
-          className="mt-4 inline-flex items-center rounded-md bg-[#005543] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#004435]"
-        >
-          再読み込み
-        </button>
+      <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center shadow-lg">
+        <p className="text-sm text-slate-600">プロフィールデータがまだありません。</p>
       </div>
     );
   }
@@ -594,16 +596,29 @@ export function ClassProfileDashboard() {
           role="tablist"
           aria-label="クラスでフィルター"
         >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSelectedClasses.length === 0}
+            onClick={() => setSelectedClasses([])}
+            className={`rounded-full px-3 py-1 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40 ${
+              activeSelectedClasses.length === 0
+                ? "bg-emerald-800 text-white"
+                : "bg-green-100 text-green-800 hover:bg-green-200"
+            }`}
+          >
+            #ALL
+          </button>
           {classTabs.map((tab) => (
             <button
               key={tab.key}
               type="button"
               role="tab"
-              aria-selected={selectedClasses.includes(tab.key)}
+              aria-selected={activeSelectedClasses.includes(tab.key)}
               onClick={() => toggleClass(tab.key)}
               title={tab.displayLabel}
               className={`rounded-full px-3 py-1 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#005543]/40 ${
-                selectedClasses.includes(tab.key)
+                activeSelectedClasses.includes(tab.key)
                   ? "bg-emerald-800 text-white"
                   : "bg-green-100 text-green-800 hover:bg-green-200"
               }`}
@@ -614,10 +629,10 @@ export function ClassProfileDashboard() {
         </div>
         <p className="text-xs text-slate-500">
           対象:{" "}
-          {selectedClasses.length === 0
+          {activeSelectedClasses.length === 0
             ? "全クラス"
             : classTabs
-                .filter((tab) => selectedClasses.includes(tab.key))
+                .filter((tab) => activeSelectedClasses.includes(tab.key))
                 .map((tab) => tab.displayLabel)
                 .join(" / ")}
         </p>
@@ -632,6 +647,9 @@ export function ClassProfileDashboard() {
             <h3 className="mb-4 shrink-0 text-xs font-semibold uppercase tracking-wider text-[#005543]">
               {title}
             </h3>
+            <p className="mb-3 shrink-0 text-[11px] text-slate-500">
+              回答者数：{respondentCountByChart[key]}人
+            </p>
             <div className="min-h-0 flex-1">
               {summary[key].length > 0 ? (
                 key === "whyInseadTop3" ? (

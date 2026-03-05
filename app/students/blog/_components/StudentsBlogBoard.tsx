@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  STUDENTS_BLOG_CSV_URL,
   type BlogPost,
   type MediaSource,
   getMediaSources,
   parseBlogDate,
-  parseBlogPosts,
 } from "../../../../lib/studentsBlog";
 
 type CampusFilter = "all" | "fonty" | "singy";
@@ -142,55 +140,26 @@ function campusMatches(post: BlogPost, filter: CampusFilter): boolean {
   return true;
 }
 
-export function StudentsBlogBoard() {
+export function StudentsBlogBoard({ posts }: { posts: BlogPost[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialPostId = searchParams.get("post");
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const initialPostId = searchParams.get("post") ?? null;
   const [filter, setFilter] = useState<CampusFilter>("all");
-  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function load() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(STUDENTS_BLOG_CSV_URL, {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        if (!response.ok) {
-          throw new Error(`CSVの取得に失敗しました (${response.status})`);
-        }
-        const csvText = await response.text();
-        setPosts(parseBlogPosts(csvText));
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : "投稿データの読み込みに失敗しました。");
-      } finally {
-        if (!controller.signal.aborted) setIsLoading(false);
-      }
-    }
-    load();
-    return () => controller.abort();
-  }, [reloadKey]);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(initialPostId);
 
   const filteredPosts = useMemo(
     () => posts.filter((post) => campusMatches(post, filter)),
     [posts, filter],
   );
+  const selectedPost = useMemo(
+    () => posts.find((post) => post.id === selectedPostId) ?? null,
+    [posts, selectedPostId],
+  );
 
-  useEffect(() => {
-    if (!initialPostId || posts.length === 0) return;
-    const matched = posts.find((post) => post.id === initialPostId);
-    if (matched) {
-      setSelectedPost(matched);
-    }
-  }, [initialPostId, posts]);
+  const closeModal = () => {
+    setSelectedPostId(null);
+    router.replace("/students/blog", { scroll: false });
+  };
 
   return (
     <section className="space-y-6">
@@ -221,31 +190,9 @@ export function StudentsBlogBoard() {
         ))}
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
-              <div className="aspect-video animate-pulse rounded-lg bg-gray-100" />
-              <div className="mt-4 h-5 w-3/4 animate-pulse rounded bg-gray-100" />
-              <div className="mt-2 h-4 w-1/2 animate-pulse rounded bg-gray-100" />
-              <div className="mt-3 space-y-2">
-                <div className="h-3 animate-pulse rounded bg-gray-100" />
-                <div className="h-3 animate-pulse rounded bg-gray-100" />
-                <div className="h-3 w-5/6 animate-pulse rounded bg-gray-100" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : error ? (
-        <div className="rounded-xl border border-red-200 bg-white p-6 text-center">
-          <p className="text-sm text-red-700">{error}</p>
-          <button
-            type="button"
-            onClick={() => setReloadKey((prev) => prev + 1)}
-            className="mt-3 rounded-md bg-[#006633] px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
-          >
-            再読み込み
-          </button>
+      {posts.length === 0 ? (
+        <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center text-sm text-slate-600">
+          投稿データがまだありません。
         </div>
       ) : (
         <>
@@ -257,7 +204,7 @@ export function StudentsBlogBoard() {
               <button
                 key={post.id}
                 type="button"
-                onClick={() => setSelectedPost(post)}
+                onClick={() => setSelectedPostId(post.id)}
                 className="group rounded-xl border border-neutral-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="relative">
@@ -298,8 +245,14 @@ export function StudentsBlogBoard() {
       )}
 
       {selectedPost ? (
-        <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/55 px-4 py-8">
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl bg-white p-5 shadow-2xl sm:p-6">
+        <div
+          className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/55 px-4 py-8"
+          onClick={closeModal}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl bg-white p-5 shadow-2xl sm:p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-xl font-semibold tracking-tight text-slate-900">
@@ -311,10 +264,7 @@ export function StudentsBlogBoard() {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedPost(null);
-                  router.replace("/students/blog", { scroll: false });
-                }}
+                onClick={closeModal}
                 className="rounded-md border border-neutral-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-neutral-50"
               >
                 閉じる
@@ -338,6 +288,15 @@ export function StudentsBlogBoard() {
             <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
               {selectedPost.body}
             </p>
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-5 py-2 text-sm font-medium text-slate-700 transition hover:border-[#005543] hover:text-[#005543]"
+              >
+                日記一覧に戻る
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
-  STUDENTS_BLOG_CSV_URL,
   type BlogPost,
   getCardBackgroundImage,
   parseBlogDate,
-  parseBlogPosts,
 } from "../../lib/studentsBlog";
 
 function formatDate(value: string): string {
@@ -62,35 +60,7 @@ function CardHeaderGraphic({ id }: { id: string }) {
   );
 }
 
-export function LatestUpdates() {
-  const [updates, setUpdates] = useState<BlogPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function load() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(STUDENTS_BLOG_CSV_URL, {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error(`CSVの取得に失敗しました (${response.status})`);
-        const csvText = await response.text();
-        setUpdates(parseBlogPosts(csvText));
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : "最新投稿の読み込みに失敗しました。");
-      } finally {
-        if (!controller.signal.aborted) setIsLoading(false);
-      }
-    }
-    load();
-    return () => controller.abort();
-  }, []);
-
+export function LatestUpdates({ updates }: { updates: BlogPost[] }) {
   const latestThree = useMemo(() => updates.slice(0, 3), [updates]);
 
   return (
@@ -106,23 +76,9 @@ export function LatestUpdates() {
         最新の在校生の投稿
       </h2>
 
-      {isLoading ? (
-        <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, idx) => (
-            <div key={idx} className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-md">
-              <div className="h-36 animate-pulse bg-gray-100" />
-              <div className="space-y-3 px-5 pb-5 pt-4">
-                <div className="h-4 w-16 animate-pulse rounded bg-gray-100" />
-                <div className="h-5 w-4/5 animate-pulse rounded bg-gray-100" />
-                <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
-                <div className="h-4 w-11/12 animate-pulse rounded bg-gray-100" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : error ? (
-        <div className="rounded-xl border border-red-200 bg-white p-5 text-sm text-red-700">
-          {error}
+      {updates.length === 0 ? (
+        <div className="rounded-xl border border-neutral-200 bg-white p-5 text-sm text-slate-600">
+          投稿データがまだありません。
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-3">
