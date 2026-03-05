@@ -49,9 +49,8 @@ export async function getBlogSheetRows(): Promise<SheetRow[]> {
   return fetchSheetRows(getEnv("BLOG_SHEET_ID"));
 }
 
-export async function getDriveImageFiles(): Promise<DriveImageFile[]> {
+async function getDriveFilesByFolderId(folderId: string): Promise<DriveImageFile[]> {
   const apiKey = getEnv("GOOGLE_SHEETS_API_KEY");
-  const folderId = getEnv("DRIVE_IMAGE_FOLDER_ID");
   const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
   const fields = encodeURIComponent("files(id,name,mimeType),nextPageToken");
   const pageSize = 1000;
@@ -64,4 +63,13 @@ export async function getDriveImageFiles(): Promise<DriveImageFile[]> {
   }
   const json = (await response.json()) as { files?: DriveImageFile[] };
   return json.files ?? [];
+}
+
+export async function getDriveImageFiles(): Promise<DriveImageFile[]> {
+  return getDriveFilesByFolderId(getEnv("DRIVE_IMAGE_FOLDER_ID"));
+}
+
+export async function getGalleryImageFiles(): Promise<DriveImageFile[]> {
+  const files = await getDriveFilesByFolderId(getEnv("GALLERY_IMAGE_FOLDER_ID"));
+  return files.filter((file) => file.mimeType.startsWith("image/"));
 }

@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 
 export type GalleryItem = {
   id: string;
-  postId: string;
+  postId?: string;
   postTitle: string;
   postedAt: string;
   author: string;
@@ -106,12 +106,14 @@ export function BlogGallery({ items }: { items: GalleryItem[] }) {
                 ))}
               </div>
               <div className="pt-2">
-                <Link
-                  href={`/students/blog?post=${encodeURIComponent(selected.postId)}`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#005543] px-4 py-2 text-sm font-medium text-[#005543] transition hover:bg-[#005543] hover:text-white"
-                >
-                  元の在校生ブログを見る
-                </Link>
+                {selected.postId ? (
+                  <Link
+                    href={`/students/blog?post=${encodeURIComponent(selected.postId)}`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#005543] px-4 py-2 text-sm font-medium text-[#005543] transition hover:bg-[#005543] hover:text-white"
+                  >
+                    元の在校生ブログを見る
+                  </Link>
+                ) : null}
               </div>
             </div>
           </div>
