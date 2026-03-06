@@ -107,6 +107,18 @@ export async function getDriveImageFiles(): Promise<DriveImageFile[]> {
 }
 
 export async function getGalleryImageFiles(): Promise<DriveImageFile[]> {
-  const files = await getDriveFilesByFolderId(getEnv("GALLERY_IMAGE_FOLDER_ID"));
-  return files.filter((file) => file.mimeType.startsWith("image/"));
+  const folderIdsRaw =
+    getOptionalEnv("GALLERY_IMAGE_FOLDER_IDS") ?? getEnv("GALLERY_IMAGE_FOLDER_ID");
+  const folderIds = folderIdsRaw
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+  const fileGroups = await Promise.all(folderIds.map((folderId) => getDriveFilesByFolderId(folderId)));
+  const dedupedById = new Map<string, DriveImageFile>();
+  fileGroups.flat().forEach((file) => {
+    if (!file.mimeType.startsWith("image/")) return;
+    if (!dedupedById.has(file.id)) dedupedById.set(file.id, file);
+  });
+  return Array.from(dedupedById.values());
 }

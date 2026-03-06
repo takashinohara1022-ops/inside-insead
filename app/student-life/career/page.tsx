@@ -1,25 +1,27 @@
 import { getStudentLifeSection } from "../../../constants/student-life-content";
+import { getContentsDocIdForPath } from "../../../constants/docPagesConfig";
+import { getDocTabAsHtml } from "../../../lib/googleDocs";
+import { DocContent } from "../../_components/DocContent";
 import { PageHero } from "../../_components/PageHero";
 import Pagination from "../../../components/Pagination";
 
+export const revalidate = 3600;
+
 const HERO_IMAGE_URL =
   "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=2070&auto=format&fit=crop";
-const P_CLASS = "leading-relaxed text-slate-600 sm:text-[15px]";
-
-export default function CareerPage() {
+export default async function CareerPage() {
   const section = getStudentLifeSection("career");
   if (!section) return null;
-  const paragraphs = section.body.split(/\n\n+/).filter(Boolean);
+
+  const pagePath = "/student-life/career";
+  const docId = getContentsDocIdForPath(pagePath);
+  const htmlContent = docId ? await getDocTabAsHtml(docId, pagePath) : "";
 
   return (
     <div className="min-h-screen bg-stone-50 text-slate-900">
       <PageHero src={HERO_IMAGE_URL} alt="キャリア" title={section.title} />
       <div className="mx-auto max-w-4xl px-6 py-12 pb-14 sm:px-8 lg:px-12 lg:py-20">
-        <div className="space-y-4">
-          {paragraphs.map((p, i) => (
-            <p key={i} className={P_CLASS}>{p}</p>
-          ))}
-        </div>
+        {htmlContent ? <DocContent html={htmlContent} /> : <p className="text-sm text-slate-500">コンテンツを準備中です。</p>}
         <Pagination />
       </div>
     </div>

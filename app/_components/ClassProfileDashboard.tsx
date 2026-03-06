@@ -23,6 +23,8 @@ export type StudentProfile = {
   campus: string;
   aptitudeTest: string;
   aptitudeScore: number | null;
+  englishTest: string;
+  englishTestScore: number | null;
   overseasExperience: string;
   yearsOfExperienceAtEntry: number | null;
   whyInseadCategoriesRaw: string;
@@ -34,6 +36,8 @@ type ProfileSummary = {
   campus: BarItem[];
   gmatScoreDistribution: BarItem[];
   greScoreDistribution: BarItem[];
+  toeflScoreDistribution: BarItem[];
+  ieltsScoreDistribution: BarItem[];
   overseas: BarItem[];
   entryWorkYears: BarItem[];
   whyInseadTop3: CountItem[];
@@ -43,11 +47,13 @@ const SUMMARY_TITLES: { key: keyof ProfileSummary; title: string }[] = [
   { key: "industry", title: "出身業界" },
   { key: "entryWorkYears", title: "入学時社会人歴（何年目）" },
   { key: "overseas", title: "海外経験（年数）" },
-  { key: "whyInseadTop3", title: "Why INSEAD? 判断軸カテゴリー Top 3（選択回数）" },
+  { key: "whyInseadTop3", title: "INSEADの何を重要視した？" },
   { key: "campus", title: "スターティングキャンパス (Fonty / Singy)" },
   { key: "sponsorship", title: "社費・私費" },
   { key: "gmatScoreDistribution", title: "GMAT Focusスコア分布" },
   { key: "greScoreDistribution", title: "GREスコア分布" },
+  { key: "toeflScoreDistribution", title: "TOEFLスコア分布" },
+  { key: "ieltsScoreDistribution", title: "IELTSスコア分布" },
 ];
 
 function toHalfWidth(value: string): string {
@@ -136,6 +142,8 @@ function parseStudentProfiles(rows: SheetRow[]): StudentProfile[] {
       campus: getByHeaderMatch(row, ["Home Campus", "ホームキャンパス", "campus"]),
       aptitudeTest: getByHeaderMatch(row, ["能力試験", "aptitude", "gmat", "gre"]),
       aptitudeScore: parseNumber(getByHeaderMatch(row, ["能力試験スコア", "aptitudescore"])),
+      englishTest: getByHeaderMatch(row, ["英語試験", "english"]),
+      englishTestScore: parseNumber(getByHeaderMatch(row, ["英語試験スコア", "englishscore"])),
       overseasExperience: getByHeaderMatch(row, [
         "海外経験(数か月以上の滞在)",
         "海外経験(半年以上の滞在)",
@@ -259,6 +267,14 @@ function isGreTaker(test: string): boolean {
   return normalizeForMatch(test).includes("gre");
 }
 
+function isToeflTaker(test: string): boolean {
+  return normalizeForMatch(test).includes("toefl");
+}
+
+function isIeltsTaker(test: string): boolean {
+  return normalizeForMatch(test).includes("ielts");
+}
+
 function classifyGmatBucket(score: number | null): "705~" | "685~705" | "665~685" | "645~665" | "~645" | null {
   if (score === null) return null;
   if (score >= 705) return "705~";
@@ -275,6 +291,26 @@ function classifyGreBucket(score: number | null): "330~" | "325~330" | "320~325"
   if (score >= 320) return "320~325";
   if (score >= 315) return "315~320";
   return "~315";
+}
+
+function classifyToeflBucket(
+  score: number | null,
+): "115~" | "110~114" | "105~109" | "100~104" | "100未満" | null {
+  if (score === null) return null;
+  if (score >= 115) return "115~";
+  if (score >= 110) return "110~114";
+  if (score >= 105) return "105~109";
+  if (score >= 100) return "100~104";
+  return "100未満";
+}
+
+function classifyIeltsBucket(score: number | null): "8.0~" | "7.5~8.0" | "7.0~7.5" | "6.5~7.0" | "~6.5" | null {
+  if (score === null) return null;
+  if (score >= 8) return "8.0~";
+  if (score >= 7.5) return "7.5~8.0";
+  if (score >= 7) return "7.0~7.5";
+  if (score >= 6.5) return "6.5~7.0";
+  return "~6.5";
 }
 
 function classifyOverseasYears(value: string): "なし" | "1-3年" | "3-5年" | "5年以上" {
@@ -352,6 +388,8 @@ function buildSummary(profiles: StudentProfile[]): ProfileSummary {
       campus: [],
       gmatScoreDistribution: [],
       greScoreDistribution: [],
+      toeflScoreDistribution: [],
+      ieltsScoreDistribution: [],
       overseas: [],
       entryWorkYears: [],
       whyInseadTop3: [],
@@ -383,6 +421,20 @@ function buildSummary(profiles: StudentProfile[]): ProfileSummary {
     ["315~320", 0],
     ["~315", 0],
   ]);
+  const toeflCounter = new Map<string, number>([
+    ["115~", 0],
+    ["110~114", 0],
+    ["105~109", 0],
+    ["100~104", 0],
+    ["100未満", 0],
+  ]);
+  const ieltsCounter = new Map<string, number>([
+    ["8.0~", 0],
+    ["7.5~8.0", 0],
+    ["7.0~7.5", 0],
+    ["6.5~7.0", 0],
+    ["~6.5", 0],
+  ]);
   const overseasCounter = new Map<string, number>([
     ["なし", 0],
     ["1-3年", 0],
@@ -399,6 +451,8 @@ function buildSummary(profiles: StudentProfile[]): ProfileSummary {
   const whyCounter = new Map<string, number>();
   let gmatTakerCount = 0;
   let greTakerCount = 0;
+  let toeflTakerCount = 0;
+  let ieltsTakerCount = 0;
 
   for (const profile of profiles) {
     incrementCount(industryCounter, normalizeIndustryLabel(profile.industry));
@@ -413,6 +467,16 @@ function buildSummary(profiles: StudentProfile[]): ProfileSummary {
       greTakerCount += 1;
       const bucket = classifyGreBucket(profile.aptitudeScore);
       if (bucket) incrementCount(greCounter, bucket);
+    }
+    if (isToeflTaker(profile.englishTest)) {
+      toeflTakerCount += 1;
+      const bucket = classifyToeflBucket(profile.englishTestScore);
+      if (bucket) incrementCount(toeflCounter, bucket);
+    }
+    if (isIeltsTaker(profile.englishTest)) {
+      ieltsTakerCount += 1;
+      const bucket = classifyIeltsBucket(profile.englishTestScore);
+      if (bucket) incrementCount(ieltsCounter, bucket);
     }
     incrementCount(overseasCounter, classifyOverseasYears(profile.overseasExperience));
     incrementCount(entryWorkYearsCounter, classifyEntryWorkYears(profile.yearsOfExperienceAtEntry));
@@ -429,6 +493,12 @@ function buildSummary(profiles: StudentProfile[]): ProfileSummary {
     (item) => item.value > 0,
   );
   const greScoreDistribution = toPercentItems(greCounter, greTakerCount).filter(
+    (item) => item.value > 0,
+  );
+  const toeflScoreDistribution = toPercentItems(toeflCounter, toeflTakerCount).filter(
+    (item) => item.value > 0,
+  );
+  const ieltsScoreDistribution = toPercentItems(ieltsCounter, ieltsTakerCount).filter(
     (item) => item.value > 0,
   );
   const overseas = sortByLabelOrder(
@@ -450,6 +520,8 @@ function buildSummary(profiles: StudentProfile[]): ProfileSummary {
     campus,
     gmatScoreDistribution,
     greScoreDistribution,
+    toeflScoreDistribution,
+    ieltsScoreDistribution,
     overseas,
     entryWorkYears,
     whyInseadTop3,
@@ -463,6 +535,8 @@ function buildRespondentCountByChart(profiles: StudentProfile[]): Record<keyof P
   ).length;
   const gmatFocusCount = profiles.filter((profile) => isGmatTaker(profile.aptitudeTest)).length;
   const greCount = profiles.filter((profile) => isGreTaker(profile.aptitudeTest)).length;
+  const toeflCount = profiles.filter((profile) => isToeflTaker(profile.englishTest)).length;
+  const ieltsCount = profiles.filter((profile) => isIeltsTaker(profile.englishTest)).length;
 
   return {
     industry: baseCount,
@@ -473,6 +547,8 @@ function buildRespondentCountByChart(profiles: StudentProfile[]): Record<keyof P
     whyInseadTop3: whyCount,
     gmatScoreDistribution: gmatFocusCount,
     greScoreDistribution: greCount,
+    toeflScoreDistribution: toeflCount,
+    ieltsScoreDistribution: ieltsCount,
   };
 }
 
