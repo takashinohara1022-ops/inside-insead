@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { NAV_TREE, type NavNode } from "./navigation";
 
+const ARCHIVE_SITE_URL = "https://insideinseadjp.blogspot.com/";
+
 function normalizePath(path: string): string {
   return path.replace(/\/$/, "") || "/";
 }
@@ -165,10 +167,13 @@ export function Footer() {
                 </li>
                 <li>
                   <a
-                    href="#"
-                    className="underline-offset-4 transition hover:text-white hover:underline"
+                    href={ARCHIVE_SITE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 underline-offset-4 transition hover:text-white hover:underline"
                   >
-                    旧サイト / アーカイブ
+                    <span>旧サイト(アーカイブ)</span>
+                    <ExternalLink className="h-4 w-4 text-white/70" />
                   </a>
                 </li>
               </ul>

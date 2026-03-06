@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import type { SheetRow } from "../../../../lib/googleData";
 
 type Tag = {
@@ -387,9 +388,7 @@ function ProfileCard({
     setAccordionState((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const coffeeChatStudentParam = encodeURIComponent(
-    `${profile.initials}_${profile.classLabel || "NA"}_${profile.careerMajor || "未設定"}`,
-  );
+  const coffeeChatTarget = `${profile.initials} / ${profile.careerMajor || "未設定"} / ${profile.homeCampus || "未設定"}`;
 
   return (
     <article className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
@@ -586,12 +585,12 @@ function ProfileCard({
         </AccordionSection>
 
         {isLatestClassMember ? (
-          <a
-            href={`/coffee-chat?student=${coffeeChatStudentParam}`}
+          <Link
+            href={`/coffee-chat?target=${encodeURIComponent(coffeeChatTarget)}`}
             className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#005543] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-[#004435] hover:shadow-lg"
           >
             {profile.initials} とコーヒーチャットをする
-          </a>
+          </Link>
         ) : null}
       </div>
     </article>

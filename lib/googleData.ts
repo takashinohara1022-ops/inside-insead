@@ -10,6 +10,8 @@ export type DriveImageFile = {
   ownerName?: string;
 };
 
+const DEFAULT_GALLERY_UPLOAD_SHEET_ID = "122oe9y4gsbLAmZtgG7BQuH_wweCCnIAUIVpS7q7z_n8";
+
 function getEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
@@ -23,6 +25,12 @@ function getOptionalEnv(name: string): string | null {
   if (!value) return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeSheetId(value: string): string {
+  const trimmed = value.trim();
+  const matched = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return matched?.[1] ?? trimmed;
 }
 
 function toSheetRows(values: string[][]): SheetRow[] {
@@ -63,8 +71,8 @@ export async function getBlogSheetRows(): Promise<SheetRow[]> {
 }
 
 export async function getGalleryUploadSheetRows(): Promise<SheetRow[]> {
-  const sheetId = getOptionalEnv("GALLERY_UPLOAD_SHEET_ID");
-  if (!sheetId) return [];
+  const configured = getOptionalEnv("GALLERY_UPLOAD_SHEET_ID");
+  const sheetId = normalizeSheetId(configured ?? DEFAULT_GALLERY_UPLOAD_SHEET_ID);
   return fetchSheetRows(sheetId);
 }
 
@@ -107,18 +115,6 @@ export async function getDriveImageFiles(): Promise<DriveImageFile[]> {
 }
 
 export async function getGalleryImageFiles(): Promise<DriveImageFile[]> {
-  const folderIdsRaw =
-    getOptionalEnv("GALLERY_IMAGE_FOLDER_IDS") ?? getEnv("GALLERY_IMAGE_FOLDER_ID");
-  const folderIds = folderIdsRaw
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
-
-  const fileGroups = await Promise.all(folderIds.map((folderId) => getDriveFilesByFolderId(folderId)));
-  const dedupedById = new Map<string, DriveImageFile>();
-  fileGroups.flat().forEach((file) => {
-    if (!file.mimeType.startsWith("image/")) return;
-    if (!dedupedById.has(file.id)) dedupedById.set(file.id, file);
-  });
-  return Array.from(dedupedById.values());
+  const files = await getDriveFilesByFolderId(getEnv("GALLERY_IMAGE_FOLDER_ID"));
+  return files.filter((file) => file.mimeType.startsWith("image/"));
 }

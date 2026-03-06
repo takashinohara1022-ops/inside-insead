@@ -1,181 +1,181 @@
 "use client";
 
-import { useState } from "react";
-import { PageHero } from "../_components/PageHero";
-import Pagination from "../../components/Pagination";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { sendCoffeeChatEmail } from "./actions";
 
-const HERO_IMAGE_URL =
-  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop";
-
-const PEOPLE_OPTIONS = [
-  "指定なし",
+const MOCK_STUDENTS = [
   "T.N / Venture Consulting / Singapore",
   "A.S / Finance / Fontainebleau",
   "M.K / Technology / Singapore",
   "R.Y / Healthcare / Fontainebleau",
-  "K.H / Consumer / Singapore",
+  "K.H / Trading / Singapore",
 ];
 
-export default function CoffeeChatPage() {
+const DEFAULT_OPTION = "指定なし";
+
+function CoffeeChatForm() {
+  const searchParams = useSearchParams();
+  const targetParam = searchParams.get("target")?.trim() ?? "";
+  const initialPerson1 = targetParam || DEFAULT_OPTION;
+  const person1Options = useMemo(() => {
+    if (!targetParam || MOCK_STUDENTS.includes(targetParam)) return MOCK_STUDENTS;
+    return [targetParam, ...MOCK_STUDENTS];
+  }, [targetParam]);
+
+  const [selectedPerson1, setSelectedPerson1] = useState(initialPerson1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  useEffect(() => {
+    setSelectedPerson1(initialPerson1);
+  }, [initialPerson1]);
+
+  async function handleSubmit(formData: FormData) {
     setIsSubmitting(true);
-    setErrorMessage(null);
-    setIsSuccess(false);
+    setSuccessMessage("");
+    setErrorMessage("");
 
-    try {
-      const formData = new FormData(event.currentTarget);
-      const payload = {
-        name: String(formData.get("name") ?? "").trim(),
-        email: String(formData.get("email") ?? "").trim(),
-        topic: String(formData.get("topic") ?? "").trim(),
-        person1: String(formData.get("person1") ?? "").trim(),
-        person2: String(formData.get("person2") ?? "").trim(),
-      };
+    const response = await sendCoffeeChatEmail({
+      name: String(formData.get("name") ?? "").trim(),
+      email: String(formData.get("email") ?? "").trim(),
+      topic: String(formData.get("topic") ?? "").trim(),
+      person1: String(formData.get("person1") ?? DEFAULT_OPTION).trim(),
+      person2: String(formData.get("person2") ?? DEFAULT_OPTION).trim(),
+    });
 
-      await sendCoffeeChatEmail(payload);
-      setIsSuccess(true);
-      event.currentTarget.reset();
-    } catch {
-      setErrorMessage("送信に失敗しました。時間をおいて再度お試しください。");
-    } finally {
-      setIsSubmitting(false);
+    setIsSubmitting(false);
+    if (response.success) {
+      setSuccessMessage("お申し込みを受け付けました。在校生からの連絡をお待ちください");
+    } else {
+      setErrorMessage(response.message ?? "送信に失敗しました。時間をおいて再度お試しください。");
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 text-slate-900">
-      <PageHero
-        src={HERO_IMAGE_URL}
-        alt="カフェでの会話を想起させる写真"
-        title="Coffee Chat"
-      />
-
-      <div className="mx-auto max-w-3xl px-6 py-12 sm:px-8 lg:px-10 lg:py-16">
-        <section className="mb-8 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-            在校生とカジュアルにお話しませんか？
-          </h2>
-          <p className="mt-3 leading-relaxed text-slate-600">
-            出願準備、キャンパス生活、授業、キャリアなど、気になることを気軽にご相談ください。以下のフォームよりお申し込みいただけます。
+      <section className="border-b border-emerald-100 bg-gradient-to-b from-emerald-50 to-stone-50">
+        <div className="mx-auto max-w-4xl px-6 py-14 sm:py-16 lg:px-8">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800">
+            Casual Interview
           </p>
-        </section>
-
-        <form
-          onSubmit={onSubmit}
-          className="space-y-5 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8"
-        >
-          <div>
-            <label htmlFor="name" className="mb-2 block text-sm font-medium text-slate-700">
-              お名前 <span className="text-rose-500">*</span>
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none ring-[#005543]/25 transition focus:border-[#005543] focus:ring-2"
-              placeholder="例: 山田 太郎"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
-              メールアドレス <span className="text-rose-500">*</span>
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none ring-[#005543]/25 transition focus:border-[#005543] focus:ring-2"
-              placeholder="example@email.com"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="topic" className="mb-2 block text-sm font-medium text-slate-700">
-              話したいこと <span className="text-rose-500">*</span>
-            </label>
-            <textarea
-              id="topic"
-              name="topic"
-              required
-              rows={5}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none ring-[#005543]/25 transition focus:border-[#005543] focus:ring-2"
-              placeholder="相談したい内容をご記入ください"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <div>
-              <label htmlFor="person1" className="mb-2 block text-sm font-medium text-slate-700">
-                話したい人（第1希望）
-              </label>
-              <select
-                id="person1"
-                name="person1"
-                defaultValue="指定なし"
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none ring-[#005543]/25 transition focus:border-[#005543] focus:ring-2"
-              >
-                {PEOPLE_OPTIONS.map((person) => (
-                  <option key={person} value={person}>
-                    {person}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="person2" className="mb-2 block text-sm font-medium text-slate-700">
-                話したい人（第2希望）
-              </label>
-              <select
-                id="person2"
-                name="person2"
-                defaultValue="指定なし"
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 outline-none ring-[#005543]/25 transition focus:border-[#005543] focus:ring-2"
-              >
-                {PEOPLE_OPTIONS.map((person) => (
-                  <option key={person} value={person}>
-                    {person}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex min-w-[12rem] items-center justify-center rounded-full bg-[#005543] px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#006b55] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? "送信中..." : "申し込む"}
-            </button>
-          </div>
-
-          {isSuccess && (
-            <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-              お申し込みを受け付けました。
-            </p>
-          )}
-          {errorMessage && (
-            <p className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {errorMessage}
-            </p>
-          )}
-        </form>
-
-        <div className="mt-10">
-          <Pagination />
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+            Coffee Chat
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+            フォーム送信後、在校生よりメールでご連絡いたします。メールにて、詳細をご案内いたします。
+          </p>
         </div>
-      </div>
+      </section>
+
+      <section className="mx-auto max-w-4xl px-6 py-10 lg:px-8">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+          <form action={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <label className="space-y-2 sm:col-span-1">
+                <span className="text-sm font-medium text-slate-700">お名前 *</span>
+                <input
+                  name="name"
+                  type="text"
+                  required
+                  placeholder="例: 山田 太郎"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+                />
+              </label>
+
+              <label className="space-y-2 sm:col-span-1">
+                <span className="text-sm font-medium text-slate-700">メールアドレス *</span>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="example@email.com"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+                />
+              </label>
+            </div>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-700">話したい内容 *</span>
+              <textarea
+                name="topic"
+                required
+                rows={5}
+                placeholder="ご相談したい内容を入力してください"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+              />
+            </label>
+
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <label className="space-y-2">
+                <span className="text-sm font-medium text-slate-700">話したい在校生 第1希望</span>
+                <select
+                  name="person1"
+                  value={selectedPerson1}
+                  onChange={(event) => setSelectedPerson1(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+                >
+                  <option value={DEFAULT_OPTION}>{DEFAULT_OPTION}</option>
+                  {person1Options.map((student) => (
+                    <option key={student} value={student}>
+                      {student}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-medium text-slate-700">話したい在校生 第2希望</span>
+                <select
+                  name="person2"
+                  defaultValue={DEFAULT_OPTION}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+                >
+                  <option value={DEFAULT_OPTION}>{DEFAULT_OPTION}</option>
+                  {MOCK_STUDENTS.map((student) => (
+                    <option key={student} value={student}>
+                      {student}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex items-center justify-center rounded-full bg-[#005543] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#004535] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isSubmitting ? "送信中..." : "申し込む"}
+              </button>
+              <p className="text-xs text-slate-500">* は必須項目です</p>
+            </div>
+
+            {successMessage ? (
+              <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                {successMessage}
+              </p>
+            ) : null}
+
+            {errorMessage ? (
+              <p className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {errorMessage}
+              </p>
+            ) : null}
+          </form>
+        </div>
+      </section>
     </div>
+  );
+}
+
+export default function CoffeeChatPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-stone-50" />}>
+      <CoffeeChatForm />
+    </Suspense>
   );
 }
 

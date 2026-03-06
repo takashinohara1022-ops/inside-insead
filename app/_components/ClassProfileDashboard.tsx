@@ -47,7 +47,7 @@ const SUMMARY_TITLES: { key: keyof ProfileSummary; title: string }[] = [
   { key: "industry", title: "出身業界" },
   { key: "entryWorkYears", title: "入学時社会人歴（何年目）" },
   { key: "overseas", title: "海外経験（年数）" },
-  { key: "whyInseadTop3", title: "INSEADの何を重要視した？" },
+  { key: "whyInseadTop3", title: "Why INSEAD? 判断軸カテゴリー Top 3（選択回数）" },
   { key: "campus", title: "スターティングキャンパス (Fonty / Singy)" },
   { key: "sponsorship", title: "社費・私費" },
   { key: "gmatScoreDistribution", title: "GMAT Focusスコア分布" },
@@ -142,8 +142,10 @@ function parseStudentProfiles(rows: SheetRow[]): StudentProfile[] {
       campus: getByHeaderMatch(row, ["Home Campus", "ホームキャンパス", "campus"]),
       aptitudeTest: getByHeaderMatch(row, ["能力試験", "aptitude", "gmat", "gre"]),
       aptitudeScore: parseNumber(getByHeaderMatch(row, ["能力試験スコア", "aptitudescore"])),
-      englishTest: getByHeaderMatch(row, ["英語試験", "english"]),
-      englishTestScore: parseNumber(getByHeaderMatch(row, ["英語試験スコア", "englishscore"])),
+      englishTest: getByHeaderMatch(row, ["英語試験", "englishtest", "toefl", "ielts"]),
+      englishTestScore:
+        parseNumber(getByHeaderMatch(row, ["英語試験スコア", "englishtestscore"])) ??
+        parseNumber(getByHeaderMatch(row, ["英語試験"])),
       overseasExperience: getByHeaderMatch(row, [
         "海外経験(数か月以上の滞在)",
         "海外経験(半年以上の滞在)",
@@ -295,22 +297,24 @@ function classifyGreBucket(score: number | null): "330~" | "325~330" | "320~325"
 
 function classifyToeflBucket(
   score: number | null,
-): "115~" | "110~114" | "105~109" | "100~104" | "100未満" | null {
+): "115~120" | "110~115" | "105~110" | "100~105" | "100未満" | null {
   if (score === null) return null;
-  if (score >= 115) return "115~";
-  if (score >= 110) return "110~114";
-  if (score >= 105) return "105~109";
-  if (score >= 100) return "100~104";
+  if (score >= 115) return "115~120";
+  if (score >= 110) return "110~115";
+  if (score >= 105) return "105~110";
+  if (score >= 100) return "100~105";
   return "100未満";
 }
 
-function classifyIeltsBucket(score: number | null): "8.0~" | "7.5~8.0" | "7.0~7.5" | "6.5~7.0" | "~6.5" | null {
+function classifyIeltsBucket(
+  score: number | null,
+): "8.0~9.0" | "7.5~7.9" | "7.0~7.4" | "6.5~6.9" | "6.5未満" | null {
   if (score === null) return null;
-  if (score >= 8) return "8.0~";
-  if (score >= 7.5) return "7.5~8.0";
-  if (score >= 7) return "7.0~7.5";
-  if (score >= 6.5) return "6.5~7.0";
-  return "~6.5";
+  if (score >= 8.0) return "8.0~9.0";
+  if (score >= 7.5) return "7.5~7.9";
+  if (score >= 7.0) return "7.0~7.4";
+  if (score >= 6.5) return "6.5~6.9";
+  return "6.5未満";
 }
 
 function classifyOverseasYears(value: string): "なし" | "1-3年" | "3-5年" | "5年以上" {
@@ -422,18 +426,18 @@ function buildSummary(profiles: StudentProfile[]): ProfileSummary {
     ["~315", 0],
   ]);
   const toeflCounter = new Map<string, number>([
-    ["115~", 0],
-    ["110~114", 0],
-    ["105~109", 0],
-    ["100~104", 0],
+    ["115~120", 0],
+    ["110~115", 0],
+    ["105~110", 0],
+    ["100~105", 0],
     ["100未満", 0],
   ]);
   const ieltsCounter = new Map<string, number>([
-    ["8.0~", 0],
-    ["7.5~8.0", 0],
-    ["7.0~7.5", 0],
-    ["6.5~7.0", 0],
-    ["~6.5", 0],
+    ["8.0~9.0", 0],
+    ["7.5~7.9", 0],
+    ["7.0~7.4", 0],
+    ["6.5~6.9", 0],
+    ["6.5未満", 0],
   ]);
   const overseasCounter = new Map<string, number>([
     ["なし", 0],

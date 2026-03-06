@@ -8,6 +8,7 @@ import { ChevronDown, ExternalLink, Menu, X } from "lucide-react";
 import { NAVIGATION_CONFIG, type NavCategory } from "../../constants/navigationConfig";
 
 const CATEGORIES = NAVIGATION_CONFIG;
+const ARCHIVE_SITE_URL = "https://insideinseadjp.blogspot.com/";
 
 function normalizePath(path: string): string {
   return path.replace(/\/$/, "") || "/";
@@ -165,6 +166,18 @@ function DrawerNavList({
           ) : null}
         </div>
       ))}
+      <div className="px-4 pt-4 pb-2">
+        <a
+          href={ARCHIVE_SITE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onNavigate}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-[#005543] underline-offset-4 transition-colors hover:underline"
+        >
+          <span>旧サイト(アーカイブ)</span>
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      </div>
     </nav>
   );
 }
@@ -257,7 +270,9 @@ export function Header() {
                 <DesktopCategoryDropdown key={category.path} category={category} pathname={pathname} />
               ))}
               <a
-                href="#"
+                href={ARCHIVE_SITE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-[#005543] underline-offset-4 transition-colors hover:underline"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
