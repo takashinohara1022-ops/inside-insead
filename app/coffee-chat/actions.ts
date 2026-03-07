@@ -34,15 +34,35 @@ function requireEnvValue(candidates: string[]): string {
   throw new Error(`Missing required env var. Expected one of: ${candidates.join(", ")}`);
 }
 
+/**
+ * Vercel 等では環境変数が1行にまとめられ、改行が \n の2文字になることがある。
+ * 改行が失われて1行になっている場合も復元する。
+ */
+function normalizePrivateKey(raw: string): string {
+  let key = raw.trim();
+  key = key.replace(/\\n/g, "\n");
+  if (
+    !key.includes("\n") &&
+    key.includes("-----BEGIN PRIVATE KEY-----") &&
+    key.includes("-----END PRIVATE KEY-----")
+  ) {
+    key = key
+      .replace(/-----BEGIN PRIVATE KEY-----/, "-----BEGIN PRIVATE KEY-----\n")
+      .replace(/-----END PRIVATE KEY-----/, "\n-----END PRIVATE KEY-----\n");
+  }
+  return key;
+}
+
 function buildGoogleAuth() {
   const clientEmail = requireEnvValue([
     "GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL",
     "GOOGLE_CLIENT_EMAIL",
   ]);
-  const privateKey = requireEnvValue([
+  const rawKey = requireEnvValue([
     "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY",
-  ]).replace(/\\n/g, "\n");
+  ]);
+  const privateKey = normalizePrivateKey(rawKey);
 
   return new google.auth.JWT({
     email: clientEmail,
@@ -93,10 +113,10 @@ async function sendCoffeeChatNotificationEmail(params: {
   topic: string;
   person1: string;
   person2: string;
-}): Promise<void> {
+}): Promise<"sent" | "skipped" | "failed"> {
   const webhookUrl = getEnvValue("COFFEE_CHAT_WEBHOOK_URL");
   if (!webhookUrl) {
-    throw new Error("COFFEE_CHAT_WEBHOOK_URL is not set");
+    return "skipped";
   }
 
   const notifyTo = getEnvValue("COFFEE_CHAT_NOTIFY_TO");
@@ -138,6 +158,7 @@ async function sendCoffeeChatNotificationEmail(params: {
   if (!response.ok) {
     throw new Error(`Failed to send email via webhook: ${response.status}`);
   }
+  return "sent";
 }
 
 export async function sendCoffeeChatEmail(payload: CoffeeChatPayload): Promise<CoffeeChatResult> {
@@ -157,7 +178,7 @@ export async function sendCoffeeChatEmail(payload: CoffeeChatPayload): Promise<C
     let emailStatus = "送信済み";
 
     try {
-      await sendCoffeeChatNotificationEmail({
+      const mailResult = await sendCoffeeChatNotificationEmail({
         submittedAt,
         name,
         email,
@@ -165,6 +186,8 @@ export async function sendCoffeeChatEmail(payload: CoffeeChatPayload): Promise<C
         person1,
         person2,
       });
+      if (mailResult === "skipped") emailStatus = "Webhook未設定";
+      else if (mailResult === "failed") emailStatus = "送信失敗";
     } catch (mailError) {
       console.error("[Coffee Chat Email Error]", mailError);
       emailStatus = "送信失敗";
