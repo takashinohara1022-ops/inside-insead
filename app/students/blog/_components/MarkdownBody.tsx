@@ -81,7 +81,11 @@ function SafeMarkdownImage({
 
 const markdownComponents: Components = {
   img: ({ src, alt, title }) => (
-    <SafeMarkdownImage src={src} alt={alt} title={title} />
+    <SafeMarkdownImage
+      src={typeof src === "string" ? src : undefined}
+      alt={typeof alt === "string" ? alt : undefined}
+      title={typeof title === "string" ? title : undefined}
+    />
   ),
 };
 
