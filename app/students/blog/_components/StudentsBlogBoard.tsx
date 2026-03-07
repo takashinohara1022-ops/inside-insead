@@ -8,6 +8,7 @@ import {
   getMediaSources,
   parseBlogDate,
 } from "../../../../lib/studentsBlog";
+import { MarkdownBody } from "./MarkdownBody";
 
 type CampusFilter = "all" | "fonty" | "singy";
 type SortOption = "newest" | "oldest";
@@ -300,7 +301,9 @@ export function StudentsBlogBoard({ posts }: { posts: BlogPost[] }) {
                 <p className="mt-1 text-xs text-slate-500">
                   {formatDate(post.postedAt)} ・ {post.author}
                 </p>
-                <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-700">{post.body}</p>
+                <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-700">
+                  {post.body.replace(/#{1,6}\s/g, "").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\n+/g, " ").trim() || post.body}
+                </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {post.hashtags.map((tag) => (
                     <span
@@ -364,9 +367,9 @@ export function StudentsBlogBoard({ posts }: { posts: BlogPost[] }) {
                 </span>
               ))}
             </div>
-            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-              {selectedPost.body}
-            </p>
+            <div className="mt-4 text-sm">
+              <MarkdownBody content={selectedPost.body} />
+            </div>
             <div className="mt-6 flex justify-center">
               <button
                 type="button"
