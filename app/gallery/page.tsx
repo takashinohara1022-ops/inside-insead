@@ -201,7 +201,6 @@ export default async function GalleryPage() {
       })
       .filter((item) => item.candidates.length > 0),
   );
-
   const folderImageItems: GalleryItem[] = galleryFolderFiles.map((file) => {
     const meta = formMetaByDriveId.get(file.id);
     const postedAt = meta?.postedAt ?? formatUploadDate(file.createdTime);
@@ -228,13 +227,11 @@ export default async function GalleryPage() {
       photoComment: meta?.comment,
     };
   });
-
   const deduped = new Map<string, GalleryItem>();
   [...folderImageItems, ...blogImageItems].forEach((item) => {
     const key = item.candidates[0] ?? item.id;
     if (!deduped.has(key)) deduped.set(key, item);
   });
-
   const galleryItems: GalleryItem[] = Array.from(deduped.values()).sort(
     (a, b) => (b.sortTimestamp ?? 0) - (a.sortTimestamp ?? 0),
   );
