@@ -48,12 +48,8 @@ function toSheetRows(values: string[][]): SheetRow[] {
 async function fetchSheetRows(sheetId: string): Promise<SheetRow[]> {
   const apiKey = getEnv("GOOGLE_SHEETS_API_KEY");
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A:ZZ?key=${apiKey}`;
-  const cacheOptions =
-    process.env.NODE_ENV === "development"
-      ? { cache: "no-store" as const }
-      : { next: { revalidate: 3600 } };
   const response = await fetch(url, {
-    ...cacheOptions,
+    cache: "no-store",
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch sheet rows: ${response.status}`);
@@ -87,12 +83,8 @@ async function getDriveFilesByFolderId(folderId: string): Promise<DriveImageFile
   const fields = encodeURIComponent("files(id,name,mimeType,createdTime,owners(displayName)),nextPageToken");
   const pageSize = 1000;
   const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=${pageSize}&key=${apiKey}`;
-  const cacheOptions =
-    process.env.NODE_ENV === "development"
-      ? { cache: "no-store" as const }
-      : { next: { revalidate: 3600 } };
   const response = await fetch(url, {
-    ...cacheOptions,
+    cache: "no-store",
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch drive files: ${response.status}`);

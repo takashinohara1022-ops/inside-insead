@@ -3,7 +3,7 @@ import Pagination from "../../../components/Pagination";
 import { StudentsProfilesDirectory } from "./_components/StudentsProfilesDirectory";
 import { getProfileSheetRows } from "../../../lib/googleData";
 
-export const revalidate = 3600;
+export const revalidate = 0;
 
 const HERO_IMAGE_URL =
   "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop";

@@ -13,7 +13,7 @@ import {
 } from "../lib/googleData";
 import { parseBlogPosts } from "../lib/studentsBlog";
 
-export const revalidate = 3600;
+export const revalidate = 0;
 
 async function safeGetProfileSheetRows(): Promise<SheetRow[]> {
   try {
