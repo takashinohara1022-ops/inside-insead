@@ -4,10 +4,40 @@ import { ArrowRight, Coffee, Users } from "lucide-react";
 import { ClassProfileDashboard } from "./_components/ClassProfileDashboard";
 import { GlobalRankingsChart } from "./_components/GlobalRankingsChart";
 import { LatestUpdates } from "./_components/LatestUpdates";
-import { getBlogSheetRows, getDriveImageFiles, getProfileSheetRows } from "../lib/googleData";
+import {
+  getBlogSheetRows,
+  getDriveImageFiles,
+  getProfileSheetRows,
+  type DriveImageFile,
+  type SheetRow,
+} from "../lib/googleData";
 import { parseBlogPosts } from "../lib/studentsBlog";
 
 export const revalidate = 3600;
+
+async function safeGetProfileSheetRows(): Promise<SheetRow[]> {
+  try {
+    return await getProfileSheetRows();
+  } catch {
+    return [];
+  }
+}
+
+async function safeGetBlogSheetRows(): Promise<SheetRow[]> {
+  try {
+    return await getBlogSheetRows();
+  } catch {
+    return [];
+  }
+}
+
+async function safeGetDriveImageFiles(): Promise<DriveImageFile[]> {
+  try {
+    return await getDriveImageFiles();
+  } catch {
+    return [];
+  }
+}
 
 const SECTION_HEADING_CLASS =
   "mb-6 text-lg font-semibold tracking-tight text-slate-900 sm:text-xl";
@@ -33,9 +63,9 @@ const REGULAR_SPONSORS = [
 
 export default async function Home() {
   const [profileRows, blogRows, driveFiles] = await Promise.all([
-    getProfileSheetRows(),
-    getBlogSheetRows(),
-    getDriveImageFiles(),
+    safeGetProfileSheetRows(),
+    safeGetBlogSheetRows(),
+    safeGetDriveImageFiles(),
   ]);
   const latestPosts = parseBlogPosts(blogRows, driveFiles);
 
