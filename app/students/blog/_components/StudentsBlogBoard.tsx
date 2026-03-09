@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   type BlogPost,
@@ -12,6 +13,37 @@ import { MarkdownBody } from "./MarkdownBody";
 
 type CampusFilter = "all" | "fonty" | "singy";
 type SortOption = "newest" | "oldest";
+
+function normalizeJoinKey(value: string): string {
+  return value
+    .replace(/\s+/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[._\-・/]/g, "");
+}
+
+function resolveAuthorDisplayName(author: string, authorDisplayNameMap: Record<string, string>): string {
+  return authorDisplayNameMap[normalizeJoinKey(author)] ?? author;
+}
+
+function AuthorLabel({
+  author,
+  label,
+  authorProfileHrefMap,
+}: {
+  author: string;
+  label?: string;
+  authorProfileHrefMap: Record<string, string>;
+}) {
+  const href = authorProfileHrefMap[normalizeJoinKey(author)];
+  const text = label ?? author;
+  if (!href) return <>{text}</>;
+  return (
+    <Link href={href} className="text-[#005543] underline-offset-2 hover:underline">
+      {text}
+    </Link>
+  );
+}
 
 function DriveImage({
   fileId,
@@ -52,7 +84,8 @@ function MediaPreview({
   showAll?: boolean;
 }) {
   const mediaSources = getMediaSources(post);
-  const renderSource = (media: MediaSource, index: number) => {
+  const renderSource = (media: MediaSource, index: number, overrideClassName?: string) => {
+    const appliedClass = overrideClassName ?? className;
     const key = `${media.kind}-${media.src ?? "none"}-${index}`;
     if (media.kind === "youtube" && media.src) {
       return (
@@ -62,7 +95,7 @@ function MediaPreview({
           title={`${post.title}-${index}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
-          className={className ?? "aspect-video w-full rounded-lg border border-neutral-200"}
+          className={appliedClass ?? "aspect-video w-full rounded-lg border border-neutral-200"}
         />
       );
     }
@@ -72,7 +105,7 @@ function MediaPreview({
         <video
           key={key}
           controls
-          className={className ?? "aspect-video w-full rounded-lg border border-neutral-200 bg-black"}
+          className={appliedClass ?? "aspect-video w-full rounded-lg border border-neutral-200 bg-black"}
         >
           <source src={media.src} />
         </video>
@@ -86,7 +119,9 @@ function MediaPreview({
             key={key}
             fileId={media.driveFileId}
             alt={post.title}
-            className={className ?? "aspect-video w-full rounded-lg border border-neutral-200 object-cover"}
+            className={
+              appliedClass ?? "aspect-video w-full rounded-lg border border-neutral-200 object-cover"
+            }
           />
         );
       }
@@ -96,7 +131,9 @@ function MediaPreview({
           key={key}
           src={media.src}
           alt={post.title}
-          className={className ?? "aspect-video w-full rounded-lg border border-neutral-200 object-cover"}
+          className={
+            appliedClass ?? "aspect-video w-full rounded-lg border border-neutral-200 object-cover"
+          }
         />
       );
     }
@@ -105,7 +142,7 @@ function MediaPreview({
       <div
         key={key}
         className={
-          className ??
+          appliedClass ??
           "flex aspect-video w-full items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-sm text-slate-500"
         }
       >
@@ -115,9 +152,22 @@ function MediaPreview({
   };
 
   if (showAll) {
+    const [first, ...rest] = mediaSources;
+    if (!first) return null;
     return (
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {mediaSources.map((media, index) => renderSource(media, index))}
+      <div className="space-y-3">
+        {renderSource(first, 0, "aspect-video w-full rounded-lg border border-neutral-200 object-cover")}
+        {rest.length > 0 ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {rest.map((media, index) =>
+              renderSource(
+                media,
+                index + 1,
+                "aspect-video w-full rounded-lg border border-neutral-200 object-cover",
+              ),
+            )}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -142,14 +192,29 @@ function campusMatches(post: BlogPost, filter: CampusFilter): boolean {
   return true;
 }
 
-export function StudentsBlogBoard({ posts }: { posts: BlogPost[] }) {
+export function StudentsBlogBoard({
+  posts,
+  authorProfileHrefMap,
+  authorDisplayNameMap,
+}: {
+  posts: BlogPost[];
+  authorProfileHrefMap: Record<string, string>;
+  authorDisplayNameMap: Record<string, string>;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialPostId = searchParams.get("post") ?? null;
+  const focusPostId = searchParams.get("focus") ?? "";
+  const fromProfile = searchParams.get("from") === "profile";
+  const studentId = searchParams.get("student") ?? "";
+  const profileReturnHref = studentId
+    ? `/students/profiles?student=${encodeURIComponent(studentId)}`
+    : null;
   const [filter, setFilter] = useState<CampusFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOption>("newest");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(initialPostId);
+  const [highlightedPostId, setHighlightedPostId] = useState("");
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -187,6 +252,17 @@ export function StudentsBlogBoard({ posts }: { posts: BlogPost[] }) {
     setSelectedPostId(null);
     router.replace("/students/blog", { scroll: false });
   };
+
+  useEffect(() => {
+    if (!focusPostId) return;
+    const timer = window.setTimeout(() => {
+      const element = document.getElementById(`blog-card-${focusPostId}`);
+      if (!element) return;
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+      setHighlightedPostId(focusPostId);
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [focusPostId, filteredPosts]);
 
   return (
     <section className="space-y-6">
@@ -283,9 +359,14 @@ export function StudentsBlogBoard({ posts }: { posts: BlogPost[] }) {
             {filteredPosts.map((post) => (
               <button
                 key={post.id}
+                id={`blog-card-${post.id}`}
                 type="button"
                 onClick={() => setSelectedPostId(post.id)}
-                className="group rounded-xl border border-neutral-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className={`group rounded-xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                  highlightedPostId === post.id
+                    ? "border-[#005543] ring-2 ring-[#005543]/30"
+                    : "border-neutral-200"
+                }`}
               >
                 <div className="relative">
                   <MediaPreview post={post} />
@@ -298,8 +379,13 @@ export function StudentsBlogBoard({ posts }: { posts: BlogPost[] }) {
                 <h3 className="mt-4 line-clamp-2 text-lg font-semibold tracking-tight text-slate-900">
                   {post.title}
                 </h3>
+                <p className="mt-1 text-xs text-slate-500">{formatDate(post.postedAt)}</p>
                 <p className="mt-1 text-xs text-slate-500">
-                  {formatDate(post.postedAt)} ・ {post.author}
+                  <AuthorLabel
+                    author={post.author}
+                    label={resolveAuthorDisplayName(post.author, authorDisplayNameMap)}
+                    authorProfileHrefMap={authorProfileHrefMap}
+                  />
                 </p>
                 <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-700">
                   {post.body.replace(/#{1,6}\s/g, "").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\n+/g, " ").trim() || post.body}
@@ -341,7 +427,12 @@ export function StudentsBlogBoard({ posts }: { posts: BlogPost[] }) {
                   {selectedPost.title}
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  {formatDate(selectedPost.postedAt)} ・ {selectedPost.author}
+                  {formatDate(selectedPost.postedAt)} ・{" "}
+                  <AuthorLabel
+                    author={selectedPost.author}
+                    label={resolveAuthorDisplayName(selectedPost.author, authorDisplayNameMap)}
+                    authorProfileHrefMap={authorProfileHrefMap}
+                  />
                 </p>
               </div>
               <button
@@ -371,13 +462,38 @@ export function StudentsBlogBoard({ posts }: { posts: BlogPost[] }) {
               <MarkdownBody content={selectedPost.body} />
             </div>
             <div className="mt-6 flex justify-center">
-              <button
-                type="button"
-                onClick={closeModal}
-                className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-5 py-2 text-sm font-medium text-slate-700 transition hover:border-[#005543] hover:text-[#005543]"
-              >
-                日記一覧に戻る
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {fromProfile && profileReturnHref ? (
+                  <Link
+                    href={profileReturnHref}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#005543] bg-[#005543] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#004435]"
+                  >
+                    在校生プロフィールにもどる
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-5 py-2 text-sm font-medium text-slate-700 transition hover:border-[#005543] hover:text-[#005543]"
+                  >
+                    閉じる
+                  </button>
+                )}
+                {fromProfile ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPostId(null);
+                      router.push(
+                        `/students/blog?focus=${encodeURIComponent(selectedPostId ?? selectedPost.id)}`,
+                      );
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-5 py-2 text-sm font-medium text-slate-700 transition hover:border-[#005543] hover:text-[#005543]"
+                  >
+                    在校生Blog一覧へ
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>

@@ -9,12 +9,12 @@ type PageHeroProps = {
 export function PageHero({ src, alt, title }: PageHeroProps) {
   return (
     <section className="relative w-full" aria-label="ヒーロー">
-      <div className="relative h-[min(42vh,20rem)] w-full overflow-hidden sm:h-[min(44vh,22rem)]">
+      <div className="relative h-[38svh] min-h-[14rem] w-full overflow-hidden sm:h-[44vh] sm:min-h-[18rem] lg:h-[50vh] lg:max-h-[28rem]">
         <Image
           src={src}
           alt={alt}
           fill
-          className="object-cover object-center"
+          className="object-cover object-[58%_center] md:object-center"
           sizes="100vw"
           priority
         />

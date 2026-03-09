@@ -1,8 +1,11 @@
 import { PageHero } from "../_components/PageHero";
 import Pagination from "../../components/Pagination";
 import {
+  buildAuthorProfileHrefMap,
+  fetchStudents,
   getBlogSheetRows,
   getDriveImageFiles,
+  getDriveImageFilesByFolderId,
   getGalleryImageFiles,
   getGalleryUploadSheetRows,
   type SheetRow,
@@ -12,6 +15,7 @@ import { BlogGallery, type GalleryItem } from "./_components/BlogGallery";
 
 const HERO_IMAGE_URL =
   "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop";
+const EMBEDDED_BLOG_IMAGE_FOLDER_ID = "1zsXGxjInn2WNFxO6_xuFgCOAEAPJ9fyV";
 
 export const revalidate = 0;
 
@@ -84,6 +88,27 @@ function splitMultiValue(value: string): string[] {
     .filter(Boolean);
 }
 
+function extractDriveIdsFromMarkdownBody(body: string): string[] {
+  if (!body?.trim()) return [];
+  const ids = new Set<string>();
+  const markdownImageRegex = /!\[[^\]]*]\(([^)]+)\)/g;
+  let imageMatch: RegExpExecArray | null;
+  while ((imageMatch = markdownImageRegex.exec(body)) !== null) {
+    const url = imageMatch[1];
+    const id = extractDriveFileId(url);
+    if (id) ids.add(id);
+  }
+
+  const urlRegex = /https?:\/\/[^\s)"']+/g;
+  const urlMatches = body.match(urlRegex) ?? [];
+  urlMatches.forEach((url) => {
+    const id = extractDriveFileId(url);
+    if (id) ids.add(id);
+  });
+
+  return Array.from(ids);
+}
+
 async function safeGetBlogRows() {
   try {
     return await getBlogSheetRows();
@@ -108,6 +133,14 @@ async function safeGetGalleryImageFiles() {
   }
 }
 
+async function safeGetEmbeddedBlogImageFiles() {
+  try {
+    return await getDriveImageFilesByFolderId(EMBEDDED_BLOG_IMAGE_FOLDER_ID);
+  } catch {
+    return [];
+  }
+}
+
 async function safeGetGalleryUploadSheetRows() {
   try {
     return await getGalleryUploadSheetRows();
@@ -117,17 +150,29 @@ async function safeGetGalleryUploadSheetRows() {
 }
 
 export default async function GalleryPage() {
-  const [blogRows, driveFiles, galleryFolderFiles, galleryUploadRows] = await Promise.all([
+  const [blogRows, driveFiles, galleryFolderFiles, embeddedBlogFolderFiles, galleryUploadRows, students] =
+    await Promise.all([
     safeGetBlogRows(),
     safeGetDriveImageFiles(),
     safeGetGalleryImageFiles(),
+    safeGetEmbeddedBlogImageFiles(),
     safeGetGalleryUploadSheetRows(),
+    fetchStudents().catch(() => []),
   ]);
+  const authorProfileHrefMap = buildAuthorProfileHrefMap(students);
 
   const posts = parseBlogPosts(blogRows, driveFiles);
   const formMetaByDriveId = new Map<
     string,
-    { author: string; postedAt: string; sortTimestamp: number; comment?: string }
+    {
+      author: string;
+      postedAt: string;
+      sortTimestamp: number;
+      comment?: string;
+      postId?: string;
+      postTitle?: string;
+      hashtags?: string[];
+    }
   >();
 
   posts.forEach((post) => {
@@ -140,8 +185,18 @@ export default async function GalleryPage() {
         if (extracted) mediaIds.add(extracted);
       }
     });
+    extractDriveIdsFromMarkdownBody(post.body).forEach((id) => {
+      mediaIds.add(id);
+    });
     mediaIds.forEach((id) => {
-      formMetaByDriveId.set(id, { author: post.author, postedAt: post.postedAt, sortTimestamp });
+      formMetaByDriveId.set(id, {
+        author: post.author,
+        postedAt: post.postedAt,
+        sortTimestamp,
+        postId: post.id,
+        postTitle: post.title,
+        hashtags: post.hashtags,
+      });
     });
   });
 
@@ -175,33 +230,40 @@ export default async function GalleryPage() {
     });
   });
 
-  const blogImageItems: GalleryItem[] = posts.flatMap((post) =>
-    getMediaSources(post)
-      .filter((media) => media.kind === "image")
-      .map((media, index) => {
-        const candidates = media.driveFileId
-          ? [
-              `https://drive.google.com/thumbnail?id=${media.driveFileId}&sz=w2000`,
-              `https://drive.google.com/uc?export=view&id=${media.driveFileId}`,
-              `https://drive.google.com/uc?export=download&id=${media.driveFileId}`,
-            ]
-          : media.src
-            ? [media.src]
-            : [];
-        return {
-          id: `${post.id}-image-${index}`,
-          postId: post.id,
-          postTitle: post.title,
-          postedAt: post.postedAt,
-          author: post.author,
-          hashtags: post.hashtags,
-          candidates,
-          sortTimestamp: post.postedAtTimestamp ?? 0,
-        };
-      })
-      .filter((item) => item.candidates.length > 0),
+  // Blog側は「カバー画像（先頭画像）」のみ表示対象にする
+  const coverDriveIds = new Set<string>();
+  const blogImageItems: GalleryItem[] = posts.flatMap((post) => {
+    const firstImage = getMediaSources(post).find((media) => media.kind === "image");
+    if (!firstImage) return [];
+    if (firstImage.driveFileId) coverDriveIds.add(firstImage.driveFileId);
+    const candidates = firstImage.driveFileId
+      ? [
+          `https://drive.google.com/thumbnail?id=${firstImage.driveFileId}&sz=w2000`,
+          `https://drive.google.com/uc?export=view&id=${firstImage.driveFileId}`,
+          `https://drive.google.com/uc?export=download&id=${firstImage.driveFileId}`,
+        ]
+      : firstImage.src
+        ? [firstImage.src]
+        : [];
+    if (candidates.length === 0) return [];
+    return [
+      {
+        id: `${post.id}-cover`,
+        postId: post.id,
+        postTitle: post.title,
+        postedAt: post.postedAt,
+        author: post.author,
+        hashtags: post.hashtags,
+        candidates,
+        sortTimestamp: post.postedAtTimestamp ?? 0,
+      },
+    ];
+  });
+  // はめ込み画像フォルダ側は、カバー画像と同一IDの画像を除外して重複を防ぐ
+  const allFolderFiles = [...galleryFolderFiles, ...embeddedBlogFolderFiles].filter(
+    (file) => !coverDriveIds.has(file.id),
   );
-  const folderImageItems: GalleryItem[] = galleryFolderFiles.map((file) => {
+  const folderImageItems: GalleryItem[] = allFolderFiles.map((file) => {
     const meta = formMetaByDriveId.get(file.id);
     const postedAt = meta?.postedAt ?? formatUploadDate(file.createdTime);
     const sortTimestamp =
@@ -209,15 +271,16 @@ export default async function GalleryPage() {
       (file.createdTime ? new Date(file.createdTime).getTime() : 0);
     return {
       id: `gallery-folder-${file.id}`,
-      postTitle: file.name,
+      postId: meta?.postId,
+      postTitle: meta?.postTitle ?? file.name,
       postedAt,
       author:
         meta?.author ??
         inferUploaderFromFileName(file.name) ??
         file.ownerName ??
         "不明",
-      isGalleryUpload: true,
-      hashtags: [],
+      isGalleryUpload: !meta?.postId,
+      hashtags: meta?.hashtags ?? [],
       candidates: [
         `https://drive.google.com/thumbnail?id=${file.id}&sz=w2000`,
         `https://drive.google.com/uc?export=view&id=${file.id}`,
@@ -247,7 +310,7 @@ export default async function GalleryPage() {
         <p className="mb-6 leading-relaxed text-slate-600 sm:text-[15px]">
           在校生ブログの写真とフォーム投稿画像を日付の新しい順で統合表示しています。フォーム投稿にはアップロード者名・アップロード日を表示します。気になる写真は拡大表示できます。
         </p>
-        <BlogGallery items={galleryItems} />
+        <BlogGallery items={galleryItems} authorProfileHrefMap={authorProfileHrefMap} />
         <Pagination />
       </div>
     </div>

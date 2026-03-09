@@ -86,6 +86,10 @@ function getByHeaderMatch(row: SheetRow, keywords: string[]): string {
   return "";
 }
 
+function getByColumnIndex(row: SheetRow, oneBasedIndex: number): string {
+  return normalizeText(Object.values(row)[oneBasedIndex - 1] ?? "");
+}
+
 function parseNumber(value: string): number | null {
   const normalized = normalizeText(value);
   const match = normalized.match(/-?\d+(\.\d+)?/);
@@ -128,16 +132,14 @@ function parseStudentProfiles(rows: SheetRow[]): StudentProfile[] {
     const gradMonth = getByHeaderMatch(row, ["INSEAD卒業月", "gradmonth"]);
     const classMeta = getClassMeta(gradYear, gradMonth);
 
+    const industryFromG = getByColumnIndex(row, 7);
     return {
       gradYear,
       gradMonth,
       classKey: classMeta.key,
       classDisplayLabel: classMeta.label,
-      industry: getByHeaderMatch(row, [
-        "キャリアバックグラウンド大分類",
-        "出身業界(大分類)",
-        "industry",
-      ]),
+      // ホーム画面の出身業界グラフは G列（出身業界(大分類)）のみを参照する
+      industry: industryFromG,
       sponsor: getByHeaderMatch(row, ["社費or私費", "sponsor"]),
       campus: getByHeaderMatch(row, ["Home Campus", "ホームキャンパス", "campus"]),
       aptitudeTest: getByHeaderMatch(row, ["能力試験", "aptitude", "gmat", "gre"]),

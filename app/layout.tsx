@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Noto_Serif_JP } from "next/font/google";
 import "./globals.css";
 import { Header } from "./_components/Header";
@@ -23,6 +23,12 @@ const notoSerifJP = Noto_Serif_JP({
 export const metadata: Metadata = {
   title: "INSIDE INSEAD",
   description: "INSIDE INSEAD - INSEAD 日本人向け非公式コミュニティサイト",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

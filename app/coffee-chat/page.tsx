@@ -1,180 +1,110 @@
-"use client";
+import { Suspense } from "react";
+import { CoffeeChatFormClient } from "./CoffeeChatFormClient";
+import { getProfileSheetRows, type SheetRow } from "../../lib/googleData";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { sendCoffeeChatEmail } from "./actions";
-
-const MOCK_STUDENTS = [
-  "T.N / Venture Consulting / Singapore",
-  "A.S / Finance / Fontainebleau",
-  "M.K / Technology / Singapore",
-  "R.Y / Healthcare / Fontainebleau",
-  "K.H / Trading / Singapore",
-];
-
-const DEFAULT_OPTION = "指定なし";
-
-function CoffeeChatForm() {
-  const searchParams = useSearchParams();
-  const targetParam = searchParams.get("target")?.trim() ?? "";
-  const initialPerson1 = targetParam || DEFAULT_OPTION;
-  const person1Options = useMemo(() => {
-    if (!targetParam || MOCK_STUDENTS.includes(targetParam)) return MOCK_STUDENTS;
-    return [targetParam, ...MOCK_STUDENTS];
-  }, [targetParam]);
-
-  const [selectedPerson1, setSelectedPerson1] = useState(initialPerson1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    setSelectedPerson1(initialPerson1);
-  }, [initialPerson1]);
-
-  async function handleSubmit(formData: FormData) {
-    setIsSubmitting(true);
-    setSuccessMessage("");
-    setErrorMessage("");
-
-    const response = await sendCoffeeChatEmail({
-      name: String(formData.get("name") ?? "").trim(),
-      email: String(formData.get("email") ?? "").trim(),
-      topic: String(formData.get("topic") ?? "").trim(),
-      person1: String(formData.get("person1") ?? DEFAULT_OPTION).trim(),
-      person2: String(formData.get("person2") ?? DEFAULT_OPTION).trim(),
-    });
-
-    setIsSubmitting(false);
-    if (response.success) {
-      setSuccessMessage("お申し込みを受け付けました。在校生からの連絡をお待ちください");
-    } else {
-      setErrorMessage(response.message ?? "送信に失敗しました。時間をおいて再度お試しください。");
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-stone-50 text-slate-900">
-      <section className="border-b border-emerald-100 bg-gradient-to-b from-emerald-50 to-stone-50">
-        <div className="mx-auto max-w-4xl px-6 py-14 sm:py-16 lg:px-8">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800">
-            Casual Interview
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            Coffee Chat
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
-            フォーム送信後、在校生よりメールでご連絡いたします。メールにて、詳細をご案内いたします。
-          </p>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-4xl px-6 py-10 lg:px-8">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-          <form action={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <label className="space-y-2 sm:col-span-1">
-                <span className="text-sm font-medium text-slate-700">お名前 *</span>
-                <input
-                  name="name"
-                  type="text"
-                  required
-                  placeholder="例: 山田 太郎"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
-                />
-              </label>
-
-              <label className="space-y-2 sm:col-span-1">
-                <span className="text-sm font-medium text-slate-700">メールアドレス *</span>
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="example@email.com"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
-                />
-              </label>
-            </div>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">話したい内容 *</span>
-              <textarea
-                name="topic"
-                required
-                rows={5}
-                placeholder="ご相談したい内容を入力してください"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
-              />
-            </label>
-
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">話したい在校生 第1希望</span>
-                <select
-                  name="person1"
-                  value={selectedPerson1}
-                  onChange={(event) => setSelectedPerson1(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
-                >
-                  <option value={DEFAULT_OPTION}>{DEFAULT_OPTION}</option>
-                  {person1Options.map((student) => (
-                    <option key={student} value={student}>
-                      {student}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">話したい在校生 第2希望</span>
-                <select
-                  name="person2"
-                  defaultValue={DEFAULT_OPTION}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
-                >
-                  <option value={DEFAULT_OPTION}>{DEFAULT_OPTION}</option>
-                  {MOCK_STUDENTS.map((student) => (
-                    <option key={student} value={student}>
-                      {student}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex items-center justify-center rounded-full bg-[#005543] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#004535] disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {isSubmitting ? "送信中..." : "申し込む"}
-              </button>
-              <p className="text-xs text-slate-500">* は必須項目です</p>
-            </div>
-
-            {successMessage ? (
-              <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                {successMessage}
-              </p>
-            ) : null}
-
-            {errorMessage ? (
-              <p className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {errorMessage}
-              </p>
-            ) : null}
-          </form>
-        </div>
-      </section>
-    </div>
-  );
+function normalizeText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
 }
 
-export default function CoffeeChatPage() {
+function normalizeForMatch(value: string): string {
+  return normalizeText(value).replace(/\s+/g, "").toLowerCase();
+}
+
+function getByHeaderMatch(row: SheetRow, keywords: string[]): string {
+  const entries = Object.entries(row);
+  for (const [header, rawValue] of entries) {
+    const normalizedHeader = normalizeForMatch(header);
+    if (keywords.some((keyword) => normalizedHeader.includes(normalizeForMatch(keyword)))) {
+      return normalizeText(rawValue ?? "");
+    }
+  }
+  return "";
+}
+
+function parseClassLabel(yearRaw: string, monthRaw: string): string {
+  const year = normalizeText(yearRaw);
+  const month = normalizeForMatch(monthRaw);
+  const yearNum = year.match(/\d{2,4}/)?.[0];
+  if (!yearNum) return "-";
+  const fourDigitYear = yearNum.length === 2 ? `20${yearNum}` : yearNum;
+  const yy = fourDigitYear.slice(-2);
+  if (month.includes("july") || month === "j" || month.includes("7")) return `${yy}J`;
+  if (month.includes("dec") || month === "d" || month.includes("12")) return `${yy}D`;
+  return yy;
+}
+
+function getCoffeeChatWindow(classLabel: string): { start: Date; end: Date } | null {
+  const match = normalizeText(classLabel).toUpperCase().match(/^(\d{2})([JD])$/);
+  if (!match) return null;
+  const graduationYear = 2000 + Number(match[1]);
+  const intake = match[2] as "J" | "D";
+  if (Number.isNaN(graduationYear)) return null;
+  if (intake === "D") {
+    return {
+      start: new Date(graduationYear, 0, 1, 0, 0, 0, 0),
+      end: new Date(graduationYear, 10, 30, 23, 59, 59, 999),
+    };
+  }
+  const admissionYear = graduationYear - 1;
+  return {
+    start: new Date(admissionYear, 8, 1, 0, 0, 0, 0),
+    end: new Date(admissionYear + 1, 5, 30, 23, 59, 59, 999),
+  };
+}
+
+function isCoffeeChatAvailableNow(classLabel: string, now: Date): boolean {
+  const window = getCoffeeChatWindow(classLabel);
+  if (!window) return false;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+  return today >= window.start && today <= window.end;
+}
+
+function formatYearsAtEntry(value: string): string {
+  const normalized = normalizeText(value);
+  if (!normalized) return "-";
+  if (normalized.includes("年目")) return normalized;
+  const numeric = normalized.match(/\d+(\.\d+)?/)?.[0];
+  return numeric ? `社会人${numeric}年目` : normalized;
+}
+
+function toCoffeeChatLabel(row: SheetRow): string {
+  const initials = getByHeaderMatch(row, ["氏名イニシャル", "initial"]) || "N/A";
+  const classLabel = parseClassLabel(
+    getByHeaderMatch(row, ["INSEAD卒業年度", "INSEAD卒業年", "gradyear"]),
+    getByHeaderMatch(row, ["INSEAD卒業月", "gradmonth"]),
+  );
+  const campus = getByHeaderMatch(row, ["Home Campus", "ホームキャンパス", "campus"]) || "-";
+  const yearsAtEntry = formatYearsAtEntry(
+    getByHeaderMatch(row, ["入学時社会人歴", "社会人歴", "社会人何年目"]),
+  );
+  const industry =
+    getByHeaderMatch(row, ["出身業界(大分類)", "出身業界（大分類）", "キャリアバックグラウンド大分類"]) ||
+    "-";
+  return `${initials} / ${classLabel} / ${campus} / ${yearsAtEntry} / ${industry}`;
+}
+
+async function getCoffeeChatStudents(): Promise<string[]> {
+  try {
+    const rows = await getProfileSheetRows();
+    const now = new Date();
+    const activeOnly = rows.filter((row) => {
+      const classLabel = parseClassLabel(
+        getByHeaderMatch(row, ["INSEAD卒業年度", "INSEAD卒業年", "gradyear"]),
+        getByHeaderMatch(row, ["INSEAD卒業月", "gradmonth"]),
+      );
+      return isCoffeeChatAvailableNow(classLabel, now);
+    });
+    return Array.from(new Set(activeOnly.map(toCoffeeChatLabel).filter(Boolean)));
+  } catch {
+    return [];
+  }
+}
+
+export default async function CoffeeChatPage() {
+  const students = await getCoffeeChatStudents();
   return (
     <Suspense fallback={<div className="min-h-screen bg-stone-50" />}>
-      <CoffeeChatForm />
+      <CoffeeChatFormClient students={students} />
     </Suspense>
   );
 }

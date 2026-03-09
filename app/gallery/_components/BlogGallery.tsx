@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const buttonBase =
   "inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-[#005543] px-4 py-2.5 text-sm font-medium text-[#005543] transition hover:bg-[#005543] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#005543] focus:ring-offset-2 sm:px-5 sm:py-2";
@@ -20,6 +21,32 @@ export type GalleryItem = {
   /** ギャラリー投稿時の写真コメント（スプレッドシート「写真コメント」列） */
   photoComment?: string;
 };
+
+function normalizeJoinKey(value: string): string {
+  return value
+    .replace(/\s+/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[._\-・/]/g, "");
+}
+
+function AuthorLabel({
+  author,
+  authorProfileHrefMap,
+  className,
+}: {
+  author: string;
+  authorProfileHrefMap: Record<string, string>;
+  className?: string;
+}) {
+  const href = authorProfileHrefMap[normalizeJoinKey(author)];
+  if (!href) return <span className={className}>{author}</span>;
+  return (
+    <Link href={href} className={className}>
+      {author}
+    </Link>
+  );
+}
 
 function GalleryImage({
   item,
@@ -46,12 +73,38 @@ function GalleryImage({
   );
 }
 
-export function BlogGallery({ items }: { items: GalleryItem[] }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+export function BlogGallery({
+  items,
+  authorProfileHrefMap,
+}: {
+  items: GalleryItem[];
+  authorProfileHrefMap: Record<string, string>;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedId = searchParams.get("item");
+  const fromProfile = searchParams.get("from") === "profile";
+  const studentId = searchParams.get("student") ?? "";
+  const profileReturnHref = studentId
+    ? `/students/profiles?student=${encodeURIComponent(studentId)}`
+    : null;
   const selected = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
     [items, selectedId],
   );
+
+  const openItem = (id: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("item", id);
+    router.replace(`/gallery?${params.toString()}`, { scroll: false });
+  };
+
+  const closeItem = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("item");
+    const query = params.toString();
+    router.replace(query ? `/gallery?${query}` : "/gallery", { scroll: false });
+  };
 
   if (items.length === 0) {
     return (
@@ -68,7 +121,7 @@ export function BlogGallery({ items }: { items: GalleryItem[] }) {
           <button
             key={item.id}
             type="button"
-            onClick={() => setSelectedId(item.id)}
+            onClick={() => openItem(item.id)}
             className="group relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
           >
             <GalleryImage
@@ -81,13 +134,36 @@ export function BlogGallery({ items }: { items: GalleryItem[] }) {
             <div className="absolute inset-x-0 bottom-0 p-3 text-left">
               {item.isGalleryUpload ? (
                 <>
-                  <p className="text-xs font-semibold text-white">{item.postedAt}</p>
-                  <p className="mt-1 text-[11px] text-white/85">{item.author}</p>
+                  <p>
+                    <span className="inline-flex rounded bg-sky-200 px-2 py-0.5 text-[11px] font-semibold text-slate-900">
+                      Gallery
+                    </span>
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-white">{item.postedAt}</p>
+                  <p className="mt-1 text-[11px] text-white/85">
+                    <AuthorLabel
+                      author={item.author}
+                      authorProfileHrefMap={authorProfileHrefMap}
+                      className="underline-offset-2 hover:underline"
+                    />
+                  </p>
                 </>
               ) : (
                 <>
-                  <p className="line-clamp-2 text-sm font-semibold text-white">{item.postTitle}</p>
-                  <p className="mt-1 text-[11px] text-white/85">{`${item.postedAt} ・ ${item.author}`}</p>
+                  <p className="line-clamp-2 text-sm font-semibold text-white">
+                    <span className="mr-1.5 inline-flex rounded bg-amber-300 px-2 py-0.5 text-[11px] font-semibold text-slate-900">
+                      Blog
+                    </span>
+                    {item.postTitle}
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-white">{item.postedAt}</p>
+                  <p className="mt-1 text-[11px] text-white/85">
+                    <AuthorLabel
+                      author={item.author}
+                      authorProfileHrefMap={authorProfileHrefMap}
+                      className="underline-offset-2 hover:underline"
+                    />
+                  </p>
                 </>
               )}
             </div>
@@ -98,7 +174,7 @@ export function BlogGallery({ items }: { items: GalleryItem[] }) {
       {selected ? (
         <div
           className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/70 p-3 sm:p-4"
-          onClick={() => setSelectedId(null)}
+          onClick={closeItem}
         >
           <div
             className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-xl sm:max-h-[90vh]"
@@ -113,7 +189,13 @@ export function BlogGallery({ items }: { items: GalleryItem[] }) {
                 {selected.isGalleryUpload ? (
                   <>
                     <p className="text-base font-semibold text-slate-900">{selected.postedAt}</p>
-                    <p className="text-sm text-slate-500">{selected.author}</p>
+                    <p className="text-sm text-slate-500">
+                      <AuthorLabel
+                        author={selected.author}
+                        authorProfileHrefMap={authorProfileHrefMap}
+                        className="text-[#005543] underline-offset-2 hover:underline"
+                      />
+                    </p>
                     {selected.photoComment?.trim() ? (
                       <blockquote className="border-l-4 border-[#005543] bg-slate-50 py-2 pl-4 pr-3 text-sm italic text-slate-700">
                         {selected.photoComment.trim()}
@@ -123,7 +205,14 @@ export function BlogGallery({ items }: { items: GalleryItem[] }) {
                 ) : (
                   <>
                     <h3 className="text-lg font-semibold text-slate-900">{selected.postTitle}</h3>
-                    <p className="text-sm text-slate-500">{`${selected.postedAt} ・ ${selected.author}`}</p>
+                    <p className="text-sm text-slate-500">
+                      {selected.postedAt} ・{" "}
+                      <AuthorLabel
+                        author={selected.author}
+                        authorProfileHrefMap={authorProfileHrefMap}
+                        className="text-[#005543] underline-offset-2 hover:underline"
+                      />
+                    </p>
                     <div className="flex flex-wrap gap-1.5">
                       {selected.hashtags.map((tag) => (
                         <span
@@ -139,7 +228,15 @@ export function BlogGallery({ items }: { items: GalleryItem[] }) {
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-slate-50/80 p-3 sm:p-4">
-              {selected.postId && !selected.isGalleryUpload ? (
+              {fromProfile && profileReturnHref ? (
+                <Link
+                  href={profileReturnHref}
+                  className={`${buttonBase} bg-[#005543] text-white hover:bg-[#004235] hover:text-white`}
+                >
+                  在校生プロフィールにもどる
+                </Link>
+              ) : null}
+              {selected.postId && !selected.isGalleryUpload && !fromProfile ? (
                 <Link
                   href={`/students/blog?post=${encodeURIComponent(selected.postId)}`}
                   className={buttonBase}
@@ -147,13 +244,22 @@ export function BlogGallery({ items }: { items: GalleryItem[] }) {
                   元の在校生ブログを見る
                 </Link>
               ) : null}
-              <button
-                type="button"
-                onClick={() => setSelectedId(null)}
-                className={`${buttonBase} bg-[#005543] text-white hover:bg-[#004235] hover:text-white`}
-              >
-                閉じる
-              </button>
+              {fromProfile ? (
+                <Link
+                  href="/gallery"
+                  className={`${buttonBase} bg-[#005543] text-white hover:bg-[#004235] hover:text-white`}
+                >
+                  ギャラリー一覧へ
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={closeItem}
+                  className={`${buttonBase} bg-[#005543] text-white hover:bg-[#004235] hover:text-white`}
+                >
+                  閉じる
+                </button>
+              )}
             </div>
           </div>
         </div>

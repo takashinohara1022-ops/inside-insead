@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { SheetRow } from "../../../../lib/googleData";
 
 type Tag = {
@@ -16,12 +17,20 @@ type StudentBlogPost = {
   author: string;
 };
 
+type StudentGalleryPost = {
+  id: string;
+  postedAt: string;
+  comment: string;
+  author: string;
+};
+
 type CoffeeChatAvailability = {
   isOpen: boolean;
 };
 
 type StudentProfile = {
   id: string;
+  uniqueDisplayName: string;
   initials: string;
   classLabel: string;
   classRank: number;
@@ -107,6 +116,10 @@ function getByHeaderMatch(row: SheetRow, keywords: string[]): string {
   return "";
 }
 
+function getByColumnIndex(row: SheetRow, oneBasedIndex: number): string {
+  return normalizeText(Object.values(row)[oneBasedIndex - 1] ?? "");
+}
+
 function splitMultiValue(raw: string): string[] {
   const normalized = normalizeText(raw);
   if (!normalized || normalized === "* none") return [];
@@ -128,11 +141,13 @@ function parseClassLabel(yearRaw: string, monthRaw: string): string {
   return yy;
 }
 
-function toDateLabel(date: Date): string {
-  const yyyy = String(date.getFullYear());
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yyyy}/${mm}/${dd}`;
+function toStudentProfileId(uniqueDisplayName: string, fallback: string): string {
+  const source = normalizeText(uniqueDisplayName) || normalizeText(fallback) || "student";
+  return source
+    .toLowerCase()
+    .replace(/[^\w\u3040-\u30ff\u3400-\u9fff-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function getCoffeeChatWindow(classLabel: string): { start: Date; end: Date } | null {
@@ -228,9 +243,9 @@ function normalizeMajorIndustry(value: string): string {
 
 function parseProfiles(rows: SheetRow[]): StudentProfile[] {
   return rows.map((row, index) => {
-    const initials = getByHeaderMatch(row, ["氏名イニシャル", "initial"]);
-    const profileName = getByHeaderMatch(row, ["氏名", "名前", "お名前"]);
-    const blogAuthorAlias = getByHeaderMatch(row, ["ブログ投稿者名", "投稿者名", "ブログ名義"]);
+    const initialsFromB = getByColumnIndex(row, 2);
+    const initials = initialsFromB || getByHeaderMatch(row, ["氏名イニシャル", "initial"]);
+    const uniqueDisplayName = getByColumnIndex(row, 22);
     const classLabel = parseClassLabel(
       getByHeaderMatch(row, ["INSEAD卒業年度", "INSEAD卒業年", "gradyear"]),
       getByHeaderMatch(row, ["INSEAD卒業月", "gradmonth"]),
@@ -331,13 +346,14 @@ function parseProfiles(rows: SheetRow[]): StudentProfile[] {
       ].filter((value): value is Tag => Boolean(value)),
     );
     const matchKeys = dedupeStrings(
-      [initials, initials.replace(/\./g, ""), profileName, blogAuthorAlias]
+      [uniqueDisplayName]
         .map(normalizeIdentity)
         .filter((value) => value.length >= 2 && value !== "n/a"),
     );
 
     return {
-      id: `${initials || "profile"}-${index}`,
+      id: toStudentProfileId(uniqueDisplayName, `${initials || "profile"}-${index}`),
+      uniqueDisplayName,
       initials: initials || "N/A",
       classLabel,
       classRank: getClassRank(classLabel),
@@ -369,13 +385,11 @@ function parseProfiles(rows: SheetRow[]): StudentProfile[] {
   });
 }
 
-function matchesBlogAuthor(profile: StudentProfile, author: string): boolean {
+function matchesAuthor(profile: StudentProfile, author: string): boolean {
   if (profile.matchKeys.length === 0) return false;
   const normalizedAuthor = normalizeIdentity(author);
   if (!normalizedAuthor || normalizedAuthor.length < 2) return false;
-  return profile.matchKeys.some(
-    (key) => normalizedAuthor === key || normalizedAuthor.includes(key) || key.includes(normalizedAuthor),
-  );
+  return profile.matchKeys.some((key) => normalizedAuthor === key);
 }
 
 function TagChip({
@@ -463,13 +477,17 @@ function ProfileCard({
   selectedTagKeys,
   onTagClick,
   coffeeChatAvailability,
-  relatedPosts,
+  relatedBlogPosts,
+  relatedGalleryPosts,
+  isHighlighted,
 }: {
   profile: StudentProfile;
   selectedTagKeys: string[];
   onTagClick: (tag: Tag) => void;
   coffeeChatAvailability: CoffeeChatAvailability;
-  relatedPosts: StudentBlogPost[];
+  relatedBlogPosts: StudentBlogPost[];
+  relatedGalleryPosts: StudentGalleryPost[];
+  isHighlighted: boolean;
 }) {
   const [accordionState, setAccordionState] = useState<Record<AccordionKey, boolean>>({
     basic: false,
@@ -487,7 +505,12 @@ function ProfileCard({
   const coffeeChatTarget = `${profile.initials} / ${profile.careerMajor || "未設定"} / ${profile.homeCampus || "未設定"}`;
 
   return (
-    <article className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+    <article
+      id={`student-card-${profile.id}`}
+      className={`scroll-mt-24 rounded-xl border bg-white p-5 shadow-sm transition ${
+        isHighlighted ? "border-[#005543] ring-2 ring-[#005543]/30" : "border-neutral-200"
+      }`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-100 pb-3">
         <div className="flex min-w-0 items-center gap-3">
           <h3 className="text-xl font-semibold tracking-tight text-slate-900">{profile.initials}</h3>
@@ -681,25 +704,41 @@ function ProfileCard({
         </AccordionSection>
 
         <AccordionSection
-          title="ブログ投稿・ギャラリー"
+          title="この人の投稿"
           open={accordionState.blog}
           onToggle={() => toggleAccordion("blog")}
         >
-          {relatedPosts.length > 0 ? (
-            <ul className="space-y-1.5">
-              {relatedPosts.map((post) => (
-                <li key={`${profile.id}-${post.id}`}>
+          {relatedBlogPosts.length === 0 && relatedGalleryPosts.length === 0 ? (
+            <p className="text-sm text-slate-600">この在校生の投稿はまだありません。</p>
+          ) : (
+            <ul className="space-y-2">
+              {relatedBlogPosts.map((post) => (
+                <li key={`${profile.id}-blog-${post.id}`} className="flex items-start gap-2">
+                  <span className="inline-flex rounded bg-amber-300 px-2 py-0.5 text-[11px] font-semibold text-slate-900">
+                    Blog
+                  </span>
                   <Link
-                    href={`/students/blog?post=${encodeURIComponent(post.id)}`}
+                          href={`/students/blog?post=${encodeURIComponent(post.id)}&from=profile&student=${encodeURIComponent(profile.id)}`}
                     className="text-sm text-[#005543] underline-offset-2 transition hover:underline"
                   >
                     {post.title}
                   </Link>
                 </li>
               ))}
+              {relatedGalleryPosts.map((item) => (
+                <li key={`${profile.id}-gallery-${item.id}`} className="flex items-start gap-2">
+                  <span className="inline-flex rounded bg-sky-200 px-2 py-0.5 text-[11px] font-semibold text-sky-900">
+                    Gallery
+                  </span>
+                  <Link
+                    href={`/gallery?item=${encodeURIComponent(item.id)}&from=profile&student=${encodeURIComponent(profile.id)}`}
+                    className="text-sm text-[#005543] underline-offset-2 transition hover:underline"
+                  >
+                    {item.postedAt || "-"}
+                  </Link>
+                </li>
+              ))}
             </ul>
-          ) : (
-            <p className="text-sm text-slate-600">この在校生のブログ投稿はまだありません。</p>
           )}
         </AccordionSection>
 
@@ -719,15 +758,19 @@ function ProfileCard({
 export function StudentsProfilesDirectory({
   rows,
   blogPosts,
+  galleryPosts,
 }: {
   rows: SheetRow[];
   blogPosts: StudentBlogPost[];
+  galleryPosts: StudentGalleryPost[];
 }) {
+  const searchParams = useSearchParams();
   const sectionTopRef = useRef<HTMLDivElement | null>(null);
   const [selectedYears, setSelectedYears] = useState<Tag[]>([]);
   const [selectedOtherTags, setSelectedOtherTags] = useState<Tag[]>([]);
   const [coffeeChatOnly, setCoffeeChatOnly] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
+  const [highlightedProfileId, setHighlightedProfileId] = useState("");
   const [isAnimating, setIsAnimating] = useState(false);
   const [slideClass, setSlideClass] = useState("translate-x-0 opacity-100");
   const today = useMemo(() => new Date(), []);
@@ -736,14 +779,22 @@ export function StudentsProfilesDirectory({
     () => parseProfiles(rows).sort((a, b) => b.classRank - a.classRank),
     [rows],
   );
-  const postsByProfileId = useMemo(() => {
+  const blogPostsByProfileId = useMemo(() => {
     const map = new Map<string, StudentBlogPost[]>();
     profiles.forEach((profile) => {
-      const related = blogPosts.filter((post) => matchesBlogAuthor(profile, post.author));
+      const related = blogPosts.filter((post) => matchesAuthor(profile, post.author));
       map.set(profile.id, related);
     });
     return map;
   }, [profiles, blogPosts]);
+  const galleryPostsByProfileId = useMemo(() => {
+    const map = new Map<string, StudentGalleryPost[]>();
+    profiles.forEach((profile) => {
+      const related = galleryPosts.filter((post) => matchesAuthor(profile, post.author));
+      map.set(profile.id, related);
+    });
+    return map;
+  }, [profiles, galleryPosts]);
 
   const yearTags = useMemo(() => {
     const map = new Map<string, Tag>();
@@ -772,6 +823,8 @@ export function StudentsProfilesDirectory({
     () => [...selectedYearKeys, ...selectedOtherTagKeys],
     [selectedYearKeys, selectedOtherTagKeys],
   );
+  const targetStudentId = searchParams.get("student") ?? "";
+  const shouldExpandForTarget = Boolean(targetStudentId);
 
   const filteredProfiles = useMemo(() => {
     const yearFiltered =
@@ -794,10 +847,15 @@ export function StudentsProfilesDirectory({
     setIsAnimating(false);
   };
 
-  const totalPages = Math.max(1, Math.ceil(filteredProfiles.length / 10));
+  const totalPages = shouldExpandForTarget
+    ? 1
+    : Math.max(1, Math.ceil(filteredProfiles.length / 10));
   const pagedProfiles = useMemo(
-    () => filteredProfiles.slice(pageIndex * 10, pageIndex * 10 + 10),
-    [filteredProfiles, pageIndex],
+    () =>
+      shouldExpandForTarget
+        ? filteredProfiles
+        : filteredProfiles.slice(pageIndex * 10, pageIndex * 10 + 10),
+    [filteredProfiles, pageIndex, shouldExpandForTarget],
   );
 
   const toggleYearTag = (tag: Tag) => {
@@ -852,6 +910,17 @@ export function StudentsProfilesDirectory({
       });
     }, 180);
   };
+
+  useEffect(() => {
+    if (!targetStudentId) return;
+    const timer = window.setTimeout(() => {
+      const element = document.getElementById(`student-card-${targetStudentId}`);
+      if (!element) return;
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightedProfileId(targetStudentId);
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [targetStudentId, pagedProfiles]);
 
   return (
     <section className="space-y-6">
@@ -952,7 +1021,9 @@ export function StudentsProfilesDirectory({
                 profile={profile}
                 selectedTagKeys={selectedTagKeys}
                 onTagClick={handleTagClick}
-                relatedPosts={postsByProfileId.get(profile.id) ?? []}
+                relatedBlogPosts={blogPostsByProfileId.get(profile.id) ?? []}
+                relatedGalleryPosts={galleryPostsByProfileId.get(profile.id) ?? []}
+                isHighlighted={highlightedProfileId === profile.id}
                 coffeeChatAvailability={
                   coffeeChatByProfileId.get(profile.id) ?? {
                     isOpen: false,
@@ -968,7 +1039,7 @@ export function StudentsProfilesDirectory({
             </div>
           ) : null}
 
-          {filteredProfiles.length > 10 ? (
+          {filteredProfiles.length > 10 && !shouldExpandForTarget ? (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 pt-4">
               <p className="text-sm text-slate-600">
                 {pageIndex + 1} / {totalPages} ページ

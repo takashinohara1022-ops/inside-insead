@@ -2,7 +2,13 @@ import { getCategoryByPath } from "../../../constants/navigationConfig";
 import { PageHero } from "../../_components/PageHero";
 import Pagination from "../../../components/Pagination";
 import { StudentsBlogBoard } from "./_components/StudentsBlogBoard";
-import { getBlogSheetRows, getDriveImageFiles } from "../../../lib/googleData";
+import {
+  buildAuthorProfileHrefMap,
+  fetchStudents,
+  getBlogSheetRows,
+  getDriveImageFiles,
+  normalizeJoinKey,
+} from "../../../lib/googleData";
 import { parseBlogPosts } from "../../../lib/studentsBlog";
 import { Suspense } from "react";
 
@@ -15,8 +21,16 @@ export default async function StudentsBlogPage() {
   const category = getCategoryByPath("/students");
   const blogPage = category?.pages.find((page) => page.path === "/students/blog");
   const title = blogPage?.title ?? "在校生ブログ";
-  const [blogRows, driveFiles] = await Promise.all([getBlogSheetRows(), getDriveImageFiles()]);
+  const [blogRows, driveFiles, students] = await Promise.all([
+    getBlogSheetRows(),
+    getDriveImageFiles(),
+    fetchStudents().catch(() => []),
+  ]);
   const posts = parseBlogPosts(blogRows, driveFiles);
+  const authorProfileHrefMap = buildAuthorProfileHrefMap(students);
+  const authorDisplayNameMap = Object.fromEntries(
+    students.map((student) => [normalizeJoinKey(student.uniqueDisplayName), student.uniqueDisplayName]),
+  );
 
   return (
     <div className="min-h-screen bg-stone-50 text-slate-900">
@@ -29,7 +43,11 @@ export default async function StudentsBlogPage() {
             </div>
           }
         >
-          <StudentsBlogBoard posts={posts} />
+          <StudentsBlogBoard
+            posts={posts}
+            authorProfileHrefMap={authorProfileHrefMap}
+            authorDisplayNameMap={authorDisplayNameMap}
+          />
         </Suspense>
         <Pagination />
       </div>

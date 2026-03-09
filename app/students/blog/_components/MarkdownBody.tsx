@@ -66,7 +66,7 @@ function SafeMarkdownImage({
       src={currentSrc}
       alt={alt ?? ""}
       title={title ?? undefined}
-      className="my-3 max-w-full rounded-lg border border-neutral-200 object-contain"
+      className="my-3 w-3/4 rounded-lg border border-neutral-200 object-contain"
       loading="lazy"
       onError={() => {
         if (fallbackIndex < candidates.length - 1) {
@@ -107,7 +107,9 @@ export function MarkdownBody({ content, className = "" }: MarkdownBodyProps) {
   }
 
   return (
-    <div className={`prose prose-slate max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-[#005543] prose-a:no-underline hover:prose-a:underline ${className}`}>
+    <div
+      className={`prose prose-slate max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-[#005543] prose-a:no-underline hover:prose-a:underline prose-img:mx-auto prose-img:w-3/4 ${className}`}
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         components={markdownComponents}

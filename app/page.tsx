@@ -74,12 +74,12 @@ export default async function Home() {
       <div className="relative isolate">
         {/* Hero: full-width image with overlay and copy */}
         <section className="relative w-full min-w-0 overflow-hidden" aria-label="ヒーロー">
-          <div className="relative h-[56svh] min-h-[20rem] w-full max-w-[100vw] overflow-hidden sm:h-[min(72vh,36rem)]">
+          <div className="relative h-[58svh] min-h-[22rem] w-full max-w-[100vw] overflow-hidden sm:h-[64vh] sm:min-h-[28rem] lg:h-[72vh] lg:max-h-[42rem]">
             <Image
               src="/images/hero-fontainebleau.png"
               alt="INSEAD フォンテンブローキャンパス"
               fill
-              className="object-cover object-[62%_center] sm:object-center"
+              className="object-cover object-[62%_center] md:object-center"
               sizes="100vw"
               priority
             />
