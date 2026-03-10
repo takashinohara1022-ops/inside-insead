@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Noto_Serif_JP } from "next/font/google";
 import "./globals.css";
 import { Header } from "./_components/Header";
 import { Footer } from "./_components/Footer";
+import { ArchiveBanner } from "./_components/ArchiveBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,6 +43,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${notoSerifJP.variable} flex min-h-screen flex-col antialiased overflow-x-hidden`}
       >
         <Header />
+        <ArchiveBanner />
         <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
         <Footer />
       </body>
