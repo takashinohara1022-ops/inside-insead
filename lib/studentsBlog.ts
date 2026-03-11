@@ -165,6 +165,10 @@ export function extractDriveFileId(url: string): string | null {
   return null;
 }
 
+export function toDriveProxyUrl(fileId: string): string {
+  return `/api/drive/file/${encodeURIComponent(fileId)}`;
+}
+
 export function guessDriveMediaType(url: string): "image" | "video" {
   const lower = url.toLowerCase();
   if (/\.(mp4|mov|webm|ogg)(\?|$)/.test(lower)) return "video";
@@ -178,14 +182,14 @@ export function getMediaSources(post: BlogPost): MediaSource[] {
 
   const fromDriveFiles = post.mediaFiles.map((file) => ({
     kind: file.mimeType.startsWith("video/") ? ("video" as const) : ("image" as const),
-    src: `https://drive.google.com/uc?export=view&id=${file.id}`,
+    src: toDriveProxyUrl(file.id),
     driveFileId: file.id,
   }));
 
   const fromUrls = post.mediaUrls
     .map((url) => {
       const driveFileId = extractDriveFileId(url);
-      const src = driveFileId ? `https://drive.google.com/uc?export=view&id=${driveFileId}` : url;
+      const src = driveFileId ? toDriveProxyUrl(driveFileId) : url;
       return {
         kind: guessDriveMediaType(url),
         src,
@@ -211,7 +215,7 @@ export function getCardBackgroundImage(post: BlogPost): string | null {
   if (!media) return null;
   if (media.kind === "youtube") return toYouTubeThumbnailUrl(post.youtubeLink);
   if (media.kind === "image" && media.driveFileId) {
-    return `https://drive.google.com/thumbnail?id=${media.driveFileId}&sz=w2000`;
+    return toDriveProxyUrl(media.driveFileId);
   }
   if (media.kind === "image" && media.src) return media.src;
   return null;

@@ -1,15 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { extractDriveFileId } from "../../../lib/studentsBlog";
+import { extractDriveFileId, toDriveProxyUrl } from "../../lib/studentsBlog";
 
-type HistoryMarkdownImageProps = {
+type DriveMarkdownImageProps = {
   src?: string;
   alt?: string;
   title?: string;
 };
 
-export function HistoryMarkdownImage({ src, alt, title }: HistoryMarkdownImageProps) {
+export function DriveMarkdownImage({ src, alt, title }: DriveMarkdownImageProps) {
   const [fallbackIndex, setFallbackIndex] = useState(0);
   const [failed, setFailed] = useState(false);
 
@@ -19,12 +19,7 @@ export function HistoryMarkdownImage({ src, alt, title }: HistoryMarkdownImagePr
 
     const driveId = extractDriveFileId(raw);
     if (!driveId) return [raw];
-
-    return [
-      `https://drive.google.com/uc?export=view&id=${driveId}`,
-      `https://drive.google.com/thumbnail?id=${driveId}&sz=w2000`,
-      `https://drive.google.com/uc?export=download&id=${driveId}`,
-    ];
+    return [toDriveProxyUrl(driveId)];
   }, [src]);
 
   const currentSrc = candidates[fallbackIndex];

@@ -54,7 +54,7 @@ export function CoffeeChatFormClient({ students }: { students: string[] }) {
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Coffee Chat</h1>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
-            フォーム送信後、在校生よりメールでご連絡いたします。メールにて、詳細をご案内いたします。
+            在校生とのコーヒーチャットを申し込むことができます。フォーム送信後、在校生よりメールにてご連絡いたします。
           </p>
         </div>
       </section>

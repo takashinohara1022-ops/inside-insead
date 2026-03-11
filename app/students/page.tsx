@@ -18,7 +18,7 @@ const STUDENTS_TOP_CONTENT: Record<string, { description: string; buttonLabel: s
   },
   "/students/blog": {
     description:
-      "現在の在校生が、日々の学生生活や、アプリケーションプロセスの振り返り、将来の展望等についての記事を書きます。公式パ情報だけでは伝わらない、キャンパスのリアルな日常をお届けします。",
+      "在校生が、日々の学生生活やアプリケーションプロセスの振り返り、将来の展望等についてのブログを書きます。公式情報だけでは伝わらない、INSEADのリアルな日常をお届けします。",
     buttonLabel: "在校生ブログを読む",
   },
 };

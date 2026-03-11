@@ -1,4 +1,5 @@
 import "server-only";
+import { getGoogleAuthHeader } from "./googleServiceAccount";
 
 export type SheetRow = Record<string, string>;
 
@@ -138,12 +139,21 @@ function toSheetRows(values: string[][]): SheetRow[] {
 }
 
 async function fetchSheetRows(sheetId: string): Promise<SheetRow[]> {
-  const apiKey = getEnv("GOOGLE_SHEETS_API_KEY");
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A:ZZ?key=${apiKey}`;
+  const authHeaders = await getGoogleAuthHeader([
+    "https://www.googleapis.com/auth/spreadsheets.readonly",
+  ]);
+  const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL?.trim() ?? "unknown";
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A:ZZ`;
   const response = await fetch(url, {
     cache: "no-store",
+    headers: authHeaders,
   });
   if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error(
+        `Failed to fetch sheet rows: 403. Spreadsheet ${sheetId} is not shared with service account (${serviceAccountEmail}). Share this spreadsheet directly with the service account and ensure Sheets API is enabled.`,
+      );
+    }
     throw new Error(`Failed to fetch sheet rows: ${response.status}`);
   }
   const json = (await response.json()) as { values?: string[][] };
@@ -170,13 +180,16 @@ export async function getGalleryUploadSheetRows(): Promise<SheetRow[]> {
 }
 
 async function getDriveFilesByFolderId(folderId: string): Promise<DriveImageFile[]> {
-  const apiKey = getEnv("GOOGLE_SHEETS_API_KEY");
+  const authHeaders = await getGoogleAuthHeader([
+    "https://www.googleapis.com/auth/drive.readonly",
+  ]);
   const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
   const fields = encodeURIComponent("files(id,name,mimeType,createdTime,owners(displayName)),nextPageToken");
   const pageSize = 1000;
-  const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=${pageSize}&key=${apiKey}`;
+  const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=${pageSize}`;
   const response = await fetch(url, {
     cache: "no-store",
+    headers: authHeaders,
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch drive files: ${response.status}`);

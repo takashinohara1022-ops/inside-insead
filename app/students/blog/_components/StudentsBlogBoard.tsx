@@ -8,6 +8,7 @@ import {
   type MediaSource,
   getMediaSources,
   parseBlogDate,
+  toDriveProxyUrl,
 } from "../../../../lib/studentsBlog";
 import { MarkdownBody } from "./MarkdownBody";
 
@@ -54,11 +55,7 @@ function DriveImage({
   alt: string;
   className: string;
 }) {
-  const candidates = [
-    `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`,
-    `https://drive.google.com/uc?export=view&id=${fileId}`,
-    `https://drive.google.com/uc?export=download&id=${fileId}`,
-  ];
+  const candidates = [toDriveProxyUrl(fileId)];
   const [index, setIndex] = useState(0);
 
   return (

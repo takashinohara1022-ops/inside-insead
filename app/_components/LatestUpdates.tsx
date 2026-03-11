@@ -7,6 +7,7 @@ import {
   getMediaSources,
   toYouTubeThumbnailUrl,
   parseBlogDate,
+  toDriveProxyUrl,
 } from "../../lib/studentsBlog";
 
 function formatDate(value: string): string {
@@ -70,11 +71,7 @@ function CoverImage({ post }: { post: BlogPost }) {
       return thumb ? [thumb] : [];
     }
     if (primaryMedia.kind === "image" && primaryMedia.driveFileId) {
-      return [
-        `https://drive.google.com/thumbnail?id=${primaryMedia.driveFileId}&sz=w2000`,
-        `https://drive.google.com/uc?export=view&id=${primaryMedia.driveFileId}`,
-        `https://drive.google.com/uc?export=download&id=${primaryMedia.driveFileId}`,
-      ];
+      return [toDriveProxyUrl(primaryMedia.driveFileId)];
     }
     if (primaryMedia.kind === "image" && primaryMedia.src) {
       return [primaryMedia.src];

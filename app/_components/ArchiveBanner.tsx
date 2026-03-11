@@ -26,35 +26,37 @@ export function ArchiveBanner() {
   if (!mounted || dismissed) return null;
 
   return (
-    <div className="relative bg-gray-100 px-12 py-2 text-center text-sm text-gray-700">
-      <p>
-        <Link
-          href={ARCHIVE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
+    <div className="bg-gray-100 py-2 text-sm text-gray-700">
+      <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 sm:px-6 lg:px-8">
+        <button
+          type="button"
+          aria-label="アーカイブ案内バナーを閉じる"
+          onClick={handleClose}
+          className="shrink-0 text-gray-500 transition-colors hover:text-gray-900"
         >
-          旧サイト(アーカイブ)
-        </Link>
-        をご覧になりたい場合は、
-        <Link
-          href={ARCHIVE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
-        >
-          こちら
-        </Link>
-        のリンクをご確認ください。
-      </p>
-      <button
-        type="button"
-        aria-label="アーカイブ案内バナーを閉じる"
-        onClick={handleClose}
-        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 transition-colors hover:text-gray-900"
-      >
-        ×
-      </button>
+          ×
+        </button>
+        <p className="text-center">
+          <Link
+            href={ARCHIVE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
+            旧サイト(アーカイブ)
+          </Link>
+          をご覧になりたい場合は、
+          <Link
+            href={ARCHIVE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
+            こちら
+          </Link>
+          のリンクをご確認ください。
+        </p>
+      </div>
     </div>
   );
 }

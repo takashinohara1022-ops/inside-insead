@@ -43,22 +43,22 @@ const SECTION_HEADING_CLASS =
   "mb-6 text-lg font-semibold tracking-tight text-slate-900 sm:text-xl";
 
 const TOP_SPONSORS = [
-  { id: "1", name: "グローバル戦略コンサル" },
-  { id: "2", name: "日系グローバル企業" },
-  { id: "3", name: "MBA 受験予備校 / メディア" },
+  { id: "1", name: "ゴールドパートナー" },
+  { id: "2", name: "ゴールドパートナー" },
+  { id: "3", name: "ゴールドパートナー" },
 ];
 
 const REGULAR_SPONSORS = [
-  { id: "4", name: "金融機関 A" },
-  { id: "5", name: "テクノロジー企業 B" },
-  { id: "6", name: "コンサルティング C" },
-  { id: "7", name: "メディア・出版 D" },
-  { id: "8", name: "人材サービス E" },
-  { id: "9", name: "製造業 F" },
-  { id: "10", name: "商社 G" },
-  { id: "11", name: "スタートアップ H" },
-  { id: "12", name: "公共・NPO I" },
-  { id: "13", name: "その他 J" },
+  { id: "4", name: "シルバーパートナー" },
+  { id: "5", name: "シルバーパートナー" },
+  { id: "6", name: "シルバーパートナー" },
+  { id: "7", name: "シルバーパートナー" },
+  { id: "8", name: "シルバーパートナー" },
+  { id: "9", name: "シルバーパートナー" },
+  { id: "10", name: "シルバーパートナー" },
+  { id: "11", name: "シルバーパートナー" },
+  { id: "12", name: "シルバーパートナー" },
+  { id: "13", name: "シルバーパートナー" },
 ];
 
 export default async function Home() {
@@ -76,7 +76,7 @@ export default async function Home() {
         <section className="relative w-full min-w-0 overflow-hidden" aria-label="ヒーロー">
           <div className="relative h-[58svh] min-h-[22rem] w-full max-w-[100vw] overflow-hidden sm:h-[64vh] sm:min-h-[28rem] lg:h-[72vh] lg:max-h-[42rem]">
             <Image
-              src="/images/hero-fontainebleau.png"
+              src="/images/home-hero-fontainebleau.png"
               alt="INSEAD フォンテンブローキャンパス"
               fill
               className="object-cover object-[62%_center] md:object-center"
@@ -121,7 +121,7 @@ export default async function Home() {
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-white/80 bg-white/10 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/20"
                   >
                     <Users className="h-4 w-4" />
-                    <span>在校生・卒業生を検索</span>
+                    <span>在校生のプロフィールをみる</span>
                   </Link>
                 </div>
               </div>
@@ -171,7 +171,7 @@ export default async function Home() {
                 スポンサー企業
               </h2>
               <p className="-mt-2 mb-4 text-[11px] text-slate-500">
-                日本からの留学を支える企業・団体との連携を構想中です。
+                スポンサー企業様との連携を計画しています。
               </p>
 
               {/* 1段目: 上位スポンサー（3社・均等） */}

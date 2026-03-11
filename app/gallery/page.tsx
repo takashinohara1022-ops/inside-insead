@@ -10,7 +10,12 @@ import {
   getGalleryUploadSheetRows,
   type SheetRow,
 } from "../../lib/googleData";
-import { extractDriveFileId, getMediaSources, parseBlogPosts } from "../../lib/studentsBlog";
+import {
+  extractDriveFileId,
+  getMediaSources,
+  parseBlogPosts,
+  toDriveProxyUrl,
+} from "../../lib/studentsBlog";
 import { BlogGallery, type GalleryItem } from "./_components/BlogGallery";
 
 const HERO_IMAGE_URL =
@@ -237,11 +242,7 @@ export default async function GalleryPage() {
     if (!firstImage) return [];
     if (firstImage.driveFileId) coverDriveIds.add(firstImage.driveFileId);
     const candidates = firstImage.driveFileId
-      ? [
-          `https://drive.google.com/thumbnail?id=${firstImage.driveFileId}&sz=w2000`,
-          `https://drive.google.com/uc?export=view&id=${firstImage.driveFileId}`,
-          `https://drive.google.com/uc?export=download&id=${firstImage.driveFileId}`,
-        ]
+      ? [toDriveProxyUrl(firstImage.driveFileId)]
       : firstImage.src
         ? [firstImage.src]
         : [];
@@ -281,11 +282,7 @@ export default async function GalleryPage() {
         "不明",
       isGalleryUpload: !meta?.postId,
       hashtags: meta?.hashtags ?? [],
-      candidates: [
-        `https://drive.google.com/thumbnail?id=${file.id}&sz=w2000`,
-        `https://drive.google.com/uc?export=view&id=${file.id}`,
-        `https://drive.google.com/uc?export=download&id=${file.id}`,
-      ],
+      candidates: [toDriveProxyUrl(file.id)],
       sortTimestamp,
       photoComment: meta?.comment,
     };
@@ -308,7 +305,7 @@ export default async function GalleryPage() {
       />
       <div className="mx-auto max-w-6xl px-6 py-12 sm:px-8 lg:px-12 lg:py-20">
         <p className="mb-6 leading-relaxed text-slate-600 sm:text-[15px]">
-          在校生ブログの写真とフォーム投稿画像を日付の新しい順で統合表示しています。フォーム投稿にはアップロード者名・アップロード日を表示します。気になる写真は拡大表示できます。
+          投稿された写真を一覧表示しています。各写真に貼付けられたリンクから投稿者プロフィールやBlog投稿元へ遷移することができます。
         </p>
         <BlogGallery items={galleryItems} authorProfileHrefMap={authorProfileHrefMap} />
         <Pagination />

@@ -5,18 +5,18 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import type { Components } from "react-markdown";
-import { extractDriveFileId } from "../../../../lib/studentsBlog";
+import { extractDriveFileId, toDriveProxyUrl } from "../../../../lib/studentsBlog";
 
 /**
- * Google Drive の共有URLを直リンク形式に変換する。
- * 例: drive.google.com/file/d/FILE_ID/view → https://drive.google.com/uc?export=view&id=FILE_ID
+ * Google Drive の共有URLを内部プロキシURL形式に変換する。
+ * 例: drive.google.com/file/d/FILE_ID/view → /api/drive/file/FILE_ID
  */
 function toDirectViewUrl(src: string | undefined): string {
   if (!src || typeof src !== "string") return "";
   const trimmed = src.trim();
   const fileId = extractDriveFileId(trimmed);
   if (fileId) {
-    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    return toDriveProxyUrl(fileId);
   }
   return trimmed;
 }
@@ -41,11 +41,7 @@ function SafeMarkdownImage({
   const driveId = resolvedSrc ? extractDriveFileId(resolvedSrc) : null;
 
   const candidates = driveId
-    ? [
-        `https://drive.google.com/thumbnail?id=${driveId}&sz=w1200`,
-        `https://drive.google.com/uc?export=view&id=${driveId}`,
-        `https://drive.google.com/uc?export=download&id=${driveId}`,
-      ]
+    ? [toDriveProxyUrl(driveId)]
     : resolvedSrc
       ? [resolvedSrc]
       : [];
