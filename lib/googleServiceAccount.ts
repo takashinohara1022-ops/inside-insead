@@ -39,8 +39,13 @@ export async function getGoogleAuthHeader(scopes: string[]): Promise<Record<stri
     },
     scopes,
   });
-  const token = await auth.getAccessToken();
-  const accessToken = typeof token === "string" ? token : token?.token;
+  const tokenResponse = await auth.getAccessToken();
+  const accessToken =
+    tokenResponse == null
+      ? null
+      : typeof tokenResponse === "string"
+        ? tokenResponse
+        : (tokenResponse as { token?: string }).token;
   if (!accessToken) throw new Error("Failed to authorize service account");
   return {
     Authorization: `Bearer ${accessToken}`,

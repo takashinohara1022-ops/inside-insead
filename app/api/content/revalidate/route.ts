@@ -17,9 +17,9 @@ function isAuthorized(request: Request): boolean {
 }
 
 function triggerContentRevalidation() {
-  revalidateTag("history-doc");
-  revalidateTag("culture-doc");
-  revalidateTag("page-content-docs");
+  revalidateTag("history-doc", "max");
+  revalidateTag("culture-doc", "max");
+  revalidateTag("page-content-docs", "max");
 
   const paths = [
     "/about",

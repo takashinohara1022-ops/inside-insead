@@ -11,7 +11,7 @@ function isAuthorized(request: Request): boolean {
 }
 
 function triggerCultureRevalidation() {
-  revalidateTag("culture-doc");
+  revalidateTag("culture-doc", "max");
   revalidatePath("/culture");
   revalidatePath("/about/culture");
 }

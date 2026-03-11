@@ -11,7 +11,7 @@ function isAuthorized(request: Request): boolean {
 }
 
 function triggerHistoryRevalidation() {
-  revalidateTag("history-doc");
+  revalidateTag("history-doc", "max");
   revalidatePath("/history");
   revalidatePath("/about/history");
 }
