@@ -13,10 +13,11 @@ const CONTENT_DOCS_FOLDER_ID =
 // ページごとに参照ドキュメントIDを固定したい場合はここで明示指定する。
 // 自動マッチより優先される。
 const FIXED_DOC_ID_BY_PATH: Record<string, string> = {
-  "/about/campuses": "1bmsGtRqg9GCVvsNfhL5jmD5ATCJDlQonPaYywhUfl2g",
-  "/about/programs": "1MoO0Vbb9-DyOYzJRwSf1QNGvCEpWxVkgQIJ5EVf6MIo",
-  "/student-life/academic-faculty": "1NjIZKgbP9TP0lWDWTfBG8hedOp5puKUZ5GNtI9192vA",
-  "/student-life/yearly-schedule": "1Gx0yxAO0t8zMX9vM0KSfNM_eevEy5xVOqtnGmzue3SI",
+  "/about/campuses": "1NjIZKgbP9TP0lWDWTfBG8hedOp5puKUZ5GNtI9192vA",
+  "/about/exchange": "1Gx0yxAO0t8zMX9vM0KSfNM_eevEy5xVOqtnGmzue3SI",
+  "/about/programs": "1bmsGtRqg9GCVvsNfhL5jmD5ATCJDlQonPaYywhUfl2g",
+  "/student-life/academic-faculty": "1MoO0Vbb9-DyOYzJRwSf1QNGvCEpWxVkgQIJ5EVf6MIo",
+  "/student-life/yearly-schedule": "1A1xbglfyfzvdOFyUh2PrgTTs4ZvzNaHogEFKnCcZo2Y",
   "/student-life/academic-terms": "1lazEmc_nlATSBqTiyzWL9GfsTQmPQgWkYLVvEjenFUI",
   "/student-life/academic-classes": "1wK5yH5f19CN2LPvOwNBmHpSksAp4Kdz46z5Z_PmXK4A",
   "/student-life/social-clubs": "1fjODLtZGub3SzvXOTUtevetZXOyjhHkx4K0_VftMt-A",

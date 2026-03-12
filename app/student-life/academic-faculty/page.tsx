@@ -13,7 +13,7 @@ export default async function AcademicFacultyPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 text-slate-900">
-      <PageHero src={HERO_IMAGE_URL} alt="教授陣" title={section.title} />
+      <PageHero src={HERO_IMAGE_URL} alt="教授" title={section.title} />
       <div className="mx-auto max-w-4xl px-6 py-12 pb-14 sm:px-8 lg:px-12 lg:py-20">
         <PageMarkdownContent content={body} />
         <Pagination />

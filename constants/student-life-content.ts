@@ -51,7 +51,7 @@ export const STUDENT_LIFE_SECTIONS: StudentLifeSection[] = [
   },
   {
     id: "academic-faculty",
-    title: "教授陣",
+    title: "教授",
     href: "/student-life/academic-faculty",
     body: `世界中から集まった一流の教授陣が、最先端の研究と実践知を融合した授業を提供しています。多くの教授が企業のアドバイザーやコンサルタントとしても活躍しており、リアルなビジネス知見を教室に持ち込んでいます。
 

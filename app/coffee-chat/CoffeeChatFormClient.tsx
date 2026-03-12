@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { sendCoffeeChatEmail } from "./actions";
 
 const DEFAULT_OPTION = "指定なし";
 
@@ -29,19 +28,32 @@ export function CoffeeChatFormClient({ students }: { students: string[] }) {
     setSuccessMessage("");
     setErrorMessage("");
 
-    const response = await sendCoffeeChatEmail({
-      name: String(formData.get("name") ?? "").trim(),
-      email: String(formData.get("email") ?? "").trim(),
-      topic: String(formData.get("topic") ?? "").trim(),
-      person1: String(formData.get("person1") ?? DEFAULT_OPTION).trim(),
-      person2: String(formData.get("person2") ?? DEFAULT_OPTION).trim(),
-    });
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(formData.get("name") ?? "").trim(),
+          email: String(formData.get("email") ?? "").trim(),
+          topic: String(formData.get("topic") ?? "").trim(),
+          person1: String(formData.get("person1") ?? DEFAULT_OPTION).trim(),
+          person2: String(formData.get("person2") ?? DEFAULT_OPTION).trim(),
+        }),
+      });
 
-    setIsSubmitting(false);
-    if (response.success) {
-      setSuccessMessage("お申し込みを受け付けました。在校生からの連絡をお待ちください");
-    } else {
-      setErrorMessage(response.message ?? "送信に失敗しました。時間をおいて再度お試しください。");
+      const data = (await response.json()) as { success?: boolean; message?: string };
+
+      if (response.ok && data.success) {
+        setSuccessMessage("申し込みが完了しました。担当者からの連絡をお待ちください。");
+      } else {
+        setErrorMessage(
+          data.message ?? "送信に失敗しました。時間をおいて再度お試しください。",
+        );
+      }
+    } catch {
+      setErrorMessage("送信に失敗しました。時間をおいて再度お試しください。");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -61,7 +73,13 @@ export function CoffeeChatFormClient({ students }: { students: string[] }) {
 
       <section className="mx-auto max-w-4xl px-6 py-10 lg:px-8">
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-          <form action={handleSubmit} className="space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit(new FormData(e.currentTarget));
+            }}
+            className="space-y-6"
+          >
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <label className="space-y-2 sm:col-span-1">
                 <span className="text-sm font-medium text-slate-700">お名前 *</span>
