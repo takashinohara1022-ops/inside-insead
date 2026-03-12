@@ -36,6 +36,14 @@ async function sendNotificationEmail(params: {
   const notificationEmail = getEnvValue("NOTIFICATION_EMAIL");
 
   if (!emailUser || !emailPass || !notificationEmail) {
+    const missing = [
+      !emailUser && "EMAIL_USER",
+      !emailPass && "EMAIL_PASS",
+      !notificationEmail && "NOTIFICATION_EMAIL",
+    ]
+      .filter(Boolean)
+      .join(", ");
+    console.warn("[Contact API] メール送信をスキップ: 未設定の環境変数:", missing);
     return "skipped";
   }
 
@@ -66,9 +74,12 @@ async function sendNotificationEmail(params: {
     "---",
   ].join("\n");
 
+  const fromDisplayName = getEnvValue("EMAIL_FROM_NAME") ?? "INSEAD Coffee Chat";
+  const fromAddress = `${fromDisplayName} <${emailUser}>`;
+
   try {
     await transporter.sendMail({
-      from: emailUser,
+      from: fromAddress,
       to: notificationEmail,
       subject: "【Coffee Chat新規申し込み】確認してください",
       text: body,
