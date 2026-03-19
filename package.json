@@ -1,0 +1,42 @@
+{
+  "name": "inside-insead",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "open": "start http://localhost:3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.37.0",
+    "@vercel/kv": "^3.0.0",
+    "googleapis": "^171.4.0",
+    "local": "^0.3.3",
+    "lucide-react": "^0.575.0",
+    "next": "16.1.6",
+    "nodemailer": "^8.0.2",
+    "papaparse": "^5.5.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-markdown": "^9.0.1",
+    "react-zoom-pan-pinch": "^3.7.0",
+    "recharts": "^3.7.0",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.15",
+    "@types/node": "^20",
+    "@types/nodemailer": "^7.0.11",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

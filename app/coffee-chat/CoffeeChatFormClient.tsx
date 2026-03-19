@@ -1,0 +1,203 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+
+const DEFAULT_OPTION = "指定なし";
+
+export function CoffeeChatFormClient({ students }: { students: string[] }) {
+  const searchParams = useSearchParams();
+  const targetParam = searchParams.get("target")?.trim() ?? "";
+  const initialPerson1 = targetParam || DEFAULT_OPTION;
+  const person1Options = useMemo(() => {
+    if (!targetParam || students.includes(targetParam)) return students;
+    return [targetParam, ...students];
+  }, [targetParam, students]);
+
+  const [selectedPerson1, setSelectedPerson1] = useState(initialPerson1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [warningMessage, setWarningMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    setSelectedPerson1(initialPerson1);
+  }, [initialPerson1]);
+
+  async function handleSubmit(formData: FormData) {
+    setIsSubmitting(true);
+    setSuccessMessage("");
+    setWarningMessage("");
+    setErrorMessage("");
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(formData.get("name") ?? "").trim(),
+          email: String(formData.get("email") ?? "").trim(),
+          topic: String(formData.get("topic") ?? "").trim(),
+          person1: String(formData.get("person1") ?? DEFAULT_OPTION).trim(),
+          person2: String(formData.get("person2") ?? DEFAULT_OPTION).trim(),
+        }),
+      });
+
+      const data = (await response.json()) as {
+        success?: boolean;
+        emailSent?: boolean;
+        message?: string;
+      };
+
+      if (response.ok && data.success) {
+        setSubmitted(true);
+        if (data.emailSent === false) {
+          setWarningMessage(
+            "申し込みは記録されましたが、通知メールの送信に失敗しました。担当者に直接ご連絡いただくか、しばらくしてから再度お試しください。",
+          );
+        } else {
+          setSuccessMessage("申し込みが完了しました。担当者からの連絡をお待ちください。");
+        }
+      } else {
+        setErrorMessage(
+          data.message ?? "送信に失敗しました。時間をおいて再度お試しください。",
+        );
+      }
+    } catch {
+      setErrorMessage("送信に失敗しました。時間をおいて再度お試しください。");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-stone-50 text-slate-900">
+      <section className="border-b border-emerald-100 bg-gradient-to-b from-emerald-50 to-stone-50">
+        <div className="mx-auto max-w-4xl px-6 py-14 sm:py-16 lg:px-8">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Coffee Chat</h1>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+            在校生とのコーヒーチャットを申し込むことができます。フォーム送信後、在校生よりメールにてご連絡いたします。
+          </p>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+            ※なお、在校生とのコーヒーチャットが選考に影響を与えることは一切ありません。
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-4xl px-6 py-10 lg:px-8">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+          {submitted ? (
+            <div className="space-y-4">
+              {successMessage ? (
+                <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                  {successMessage}
+                </p>
+              ) : null}
+              {warningMessage ? (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  {warningMessage}
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit(new FormData(e.currentTarget));
+              }}
+              className="space-y-6"
+            >
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <label className="space-y-2 sm:col-span-1">
+                  <span className="text-sm font-medium text-slate-700">お名前 *</span>
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    placeholder="例: 山田 太郎"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+                  />
+                </label>
+
+                <label className="space-y-2 sm:col-span-1">
+                  <span className="text-sm font-medium text-slate-700">メールアドレス *</span>
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    placeholder="example@email.com"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+                  />
+                </label>
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">話したい内容 *</span>
+                <textarea
+                  name="topic"
+                  required
+                  rows={5}
+                  placeholder="ご相談したい内容を入力してください"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+                />
+              </label>
+
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-slate-700">話したい在校生 第1希望</span>
+                  <select
+                    name="person1"
+                    value={selectedPerson1}
+                    onChange={(event) => setSelectedPerson1(event.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+                  >
+                    <option value={DEFAULT_OPTION}>{DEFAULT_OPTION}</option>
+                    {person1Options.map((student) => (
+                      <option key={student} value={student}>
+                        {student}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-sm font-medium text-slate-700">話したい在校生 第2希望</span>
+                  <select
+                    name="person2"
+                    defaultValue={DEFAULT_OPTION}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-200"
+                  >
+                    <option value={DEFAULT_OPTION}>{DEFAULT_OPTION}</option>
+                    {students.map((student) => (
+                      <option key={student} value={student}>
+                        {student}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center justify-center rounded-full bg-[#005543] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#004535] disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isSubmitting ? "送信中..." : "申し込む"}
+                </button>
+                <p className="text-xs text-slate-500">* は必須項目です</p>
+              </div>
+
+              {errorMessage ? (
+                <p className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  {errorMessage}
+                </p>
+              ) : null}
+            </form>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
