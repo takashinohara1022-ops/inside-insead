@@ -400,7 +400,7 @@ export function StudentsBlogBoard({
                 <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-700">
                   {post.body.replace(/#{1,6}\s/g, "").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\n+/g, " ").trim() || post.body}
                 </p>
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="mt-3 space-y-2">
                   <div className="flex flex-wrap gap-1.5">
                     {post.hashtags.map((tag) => (
                       <span
@@ -411,12 +411,14 @@ export function StudentsBlogBoard({
                       </span>
                     ))}
                   </div>
-                  <LikeButton
-                    postId={post.id}
-                    initialCount={likesByPostId[post.id]?.count ?? 0}
-                    initialLiked={likesByPostId[post.id]?.liked ?? false}
-                    onUpdate={handleLikeUpdate}
-                  />
+                  <div className="flex justify-start">
+                    <LikeButton
+                      postId={post.id}
+                      initialCount={likesByPostId[post.id]?.count ?? 0}
+                      initialLiked={likesByPostId[post.id]?.liked ?? false}
+                      onUpdate={handleLikeUpdate}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
