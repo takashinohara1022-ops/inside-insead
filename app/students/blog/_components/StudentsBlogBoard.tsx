@@ -14,7 +14,7 @@ import { LikeButton } from "./LikeButton";
 import { MarkdownBody } from "./MarkdownBody";
 
 type CampusFilter = "all" | "fonty" | "singy";
-type SortOption = "newest" | "oldest";
+type SortOption = "newest" | "oldest" | "likes";
 
 function normalizeJoinKey(value: string): string {
   return value
@@ -219,6 +219,32 @@ export function StudentsBlogBoard({
     setLikesByPostId((prev) => ({ ...prev, [postId]: data }));
   }, []);
 
+  useEffect(() => {
+    if (posts.length === 0) return;
+    let clientId: string | null = null;
+    if (typeof window !== "undefined") {
+      clientId = localStorage.getItem("blog-like-client-id");
+      if (!clientId) {
+        clientId = crypto.randomUUID?.() ?? `fallback-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem("blog-like-client-id", clientId);
+      }
+    }
+    if (!clientId) return;
+    const postIds = posts.map((p) => p.id);
+    const batchSize = 50;
+    for (let i = 0; i < postIds.length; i += batchSize) {
+      const batch = postIds.slice(i, i + batchSize);
+      fetch(
+        `/api/blog/likes?postIds=${batch.map((id) => encodeURIComponent(id)).join(",")}&clientId=${encodeURIComponent(clientId)}`,
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setLikesByPostId((prev) => ({ ...prev, ...data }));
+        })
+        .catch(() => {});
+    }
+  }, [posts]);
+
   const allTags = useMemo(() => {
     const set = new Set<string>();
     posts.forEach((post) => {
@@ -236,12 +262,17 @@ export function StudentsBlogBoard({
         ? campusFiltered
         : campusFiltered.filter((post) => selectedTags.every((tag) => post.hashtags.includes(tag)));
     const sorted = [...hashtagFiltered].sort((a, b) => {
+      if (sortOrder === "likes") {
+        const aCount = likesByPostId[a.id]?.count ?? 0;
+        const bCount = likesByPostId[b.id]?.count ?? 0;
+        return bCount - aCount;
+      }
       const aTime = a.postedAtTimestamp ?? 0;
       const bTime = b.postedAtTimestamp ?? 0;
       return sortOrder === "newest" ? bTime - aTime : aTime - bTime;
     });
     return sorted;
-  }, [posts, filter, selectedTags, sortOrder]);
+  }, [posts, filter, selectedTags, sortOrder, likesByPostId]);
   const selectedPost = useMemo(
     () => posts.find((post) => post.id === selectedPostId) ?? null,
     [posts, selectedPostId],
@@ -306,6 +337,7 @@ export function StudentsBlogBoard({
             >
               <option value="newest">投稿日時が新しい順</option>
               <option value="oldest">投稿日時が古い順</option>
+              <option value="likes">いいね数が多い順</option>
             </select>
           </label>
         </div>
