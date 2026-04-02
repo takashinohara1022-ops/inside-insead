@@ -466,16 +466,16 @@ export function StudentsBlogBoard({
 
       {selectedPost ? (
         <div
-          className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/55 px-4 py-8"
+          className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/55 p-2 sm:p-3 md:p-4"
           onClick={closeModal}
         >
           <div
-            className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl bg-white p-5 shadow-2xl sm:p-6"
+            className="max-h-[min(92vh,100dvh-1rem)] w-full min-w-0 overflow-y-auto rounded-xl bg-white p-4 shadow-2xl sm:p-6 md:p-8 lg:p-10"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold tracking-tight text-slate-900">
+                <h3 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl lg:text-3xl">
                   {selectedPost.title}
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
@@ -510,7 +510,7 @@ export function StudentsBlogBoard({
                 </span>
               ))}
             </div>
-            <div className="mt-4 text-sm">
+            <div className="mt-4 text-base leading-relaxed">
               <MarkdownBody content={selectedPost.body} />
             </div>
             <div className="mt-4 flex justify-start">
