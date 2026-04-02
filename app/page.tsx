@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Coffee, Users } from "lucide-react";
 import { ClassProfileDashboard } from "./_components/ClassProfileDashboard";
-import { GlobalRankingsChart } from "./_components/GlobalRankingsChart";
 import { LatestUpdates } from "./_components/LatestUpdates";
 import {
   getBlogSheetRows,
@@ -148,19 +147,6 @@ export default async function Home() {
           </section>
           <main className="flex flex-1 flex-col gap-12 lg:gap-16 mt-12 lg:mt-16">
             <LatestUpdates updates={latestPosts} />
-
-            <section
-              id="rankings"
-              aria-labelledby="rankings-heading"
-              className="scroll-mt-20 space-y-6"
-            >
-              <h2 id="rankings-heading" className={SECTION_HEADING_CLASS}>
-                世界ランキングの実績 (Global Rankings)
-              </h2>
-              <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white p-4 shadow-lg sm:p-6">
-                <GlobalRankingsChart />
-              </div>
-            </section>
 
             <section
               id="sponsors"
