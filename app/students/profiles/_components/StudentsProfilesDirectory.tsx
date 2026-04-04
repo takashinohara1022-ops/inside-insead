@@ -295,19 +295,25 @@ function parseProfiles(rows: SheetRow[]): StudentProfile[] {
         .filter(Boolean)
         .map(toTag),
     );
-    const whyFreeText =
-      getByHeaderMatch(row, [
-        "Why INSEAD? *500文字以内",
-        "Why INSEAD？ *500文字以内",
-        "Why INSEAD? *200文字以上",
-        "Why INSEAD？ *200文字以上",
-        "Why INSEAD? 　*200文字以上",
-        "Why INSEAD？ 　*200文字以上",
-        "Why INSEAD?（自由記述）",
-        "Why INSEAD？（自由記述）",
-        "Why INSEAD? (自由記述)",
-        "Why INSEAD？ (自由記述)",
-      ]) || getByHeaderMatch(row, ["自由記述"]);
+    // T列「Why INSEAD?  *たくさん書いてください」等。キーワード「自由記述」単独は使わない
+    // （H列「…その他」で自由記述可」が先にマッチして小分類が本文扱いになるため）。
+    const whyFreeText = getByHeaderMatch(row, [
+      "Why INSEAD?  *たくさん書いてください",
+      "Why INSEAD？ *たくさん書いてください",
+      "Why INSEAD? *たくさん書いてください",
+      "Why INSEAD？ *たくさん書いてください",
+      "たくさん書いてください",
+      "Why INSEAD? *500文字以内",
+      "Why INSEAD？ *500文字以内",
+      "Why INSEAD? *200文字以上",
+      "Why INSEAD？ *200文字以上",
+      "Why INSEAD? 　*200文字以上",
+      "Why INSEAD？ 　*200文字以上",
+      "Why INSEAD?（自由記述）",
+      "Why INSEAD？（自由記述）",
+      "Why INSEAD? (自由記述)",
+      "Why INSEAD？ (自由記述)",
+    ]);
     const processAdvice = getByHeaderMatch(
       row,
       [
