@@ -67,20 +67,21 @@ function formatYearsAtEntry(value: string): string {
   return numeric ? `社会人${numeric}年目` : normalized;
 }
 
+function getByColumnIndex(row: SheetRow, oneBasedIndex: number): string {
+  const values = Object.values(row);
+  return normalizeText(values[oneBasedIndex - 1] ?? "");
+}
+
 function toCoffeeChatLabel(row: SheetRow): string {
+  // V列（22列目）の表示名を使用。未設定の場合はイニシャルにフォールバック
+  const colV = getByColumnIndex(row, 22);
+  if (colV) return colV;
   const initials = getByHeaderMatch(row, ["氏名イニシャル", "initial"]) || "N/A";
   const classLabel = parseClassLabel(
     getByHeaderMatch(row, ["INSEAD卒業年度", "INSEAD卒業年", "gradyear"]),
     getByHeaderMatch(row, ["INSEAD卒業月", "gradmonth"]),
   );
-  const campus = getByHeaderMatch(row, ["Home Campus", "ホームキャンパス", "campus"]) || "-";
-  const yearsAtEntry = formatYearsAtEntry(
-    getByHeaderMatch(row, ["入学時社会人歴", "社会人歴", "社会人何年目"]),
-  );
-  const industry =
-    getByHeaderMatch(row, ["出身業界(大分類)", "出身業界（大分類）", "キャリアバックグラウンド大分類"]) ||
-    "-";
-  return `${initials} / ${classLabel} / ${campus} / ${yearsAtEntry} / ${industry}`;
+  return `${initials} / ${classLabel}`;
 }
 
 async function getCoffeeChatStudents(): Promise<string[]> {

@@ -51,13 +51,14 @@ async function sendNotificationEmail(params: {
 }): Promise<"sent" | "skipped" | "failed"> {
   const emailUser = getEnvValue("EMAIL_USER");
   const emailPass = getEnvValue("EMAIL_PASS");
-  const notificationEmail = getEnvValue("NOTIFICATION_EMAIL");
+  const notificationEmail =
+    getEnvValue("COFFEE_CHAT_NOTIFY_TO") ?? getEnvValue("NOTIFICATION_EMAIL");
 
   if (!emailUser || !emailPass || !notificationEmail) {
     const missing = [
       !emailUser && "EMAIL_USER",
       !emailPass && "EMAIL_PASS",
-      !notificationEmail && "NOTIFICATION_EMAIL",
+      !notificationEmail && "COFFEE_CHAT_NOTIFY_TO",
     ]
       .filter(Boolean)
       .join(", ");
