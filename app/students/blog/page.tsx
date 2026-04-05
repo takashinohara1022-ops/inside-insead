@@ -33,7 +33,7 @@ export default async function StudentsBlogPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 text-slate-900">
-      <PageHero src={HERO_IMAGE_URL} alt={title} title={title} />
+      <PageHero src={HERO_IMAGE_URL} alt="INSEADライブラリー。木製の曲線天井、カラフルなブース、書架、学習スペース" title={title} />
       <div className="mx-auto max-w-6xl px-6 py-12 pb-14 sm:px-8 lg:px-12 lg:py-20">
         <Suspense
           fallback={
