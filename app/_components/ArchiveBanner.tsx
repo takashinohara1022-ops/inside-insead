@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const ARCHIVE_URL = "https://insideinseadjp.blogspot.com/";
+const ARCHIVE_URL = "https://insideinseadjp-pre2025.blogspot.com/";
 const DISMISS_STORAGE_KEY = "archive-banner-dismissed";
 
 export function ArchiveBanner() {

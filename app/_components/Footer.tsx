@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { NAV_TREE, type NavNode } from "./navigation";
 
-const ARCHIVE_SITE_URL = "https://insideinseadjp.blogspot.com/";
+const ARCHIVE_SITE_URL = "https://insideinseadjp-pre2025.blogspot.com/";
 
 function normalizePath(path: string): string {
   return path.replace(/\/$/, "") || "/";

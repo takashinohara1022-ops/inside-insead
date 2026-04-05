@@ -8,7 +8,7 @@ import { ChevronDown, ExternalLink, Menu, X } from "lucide-react";
 import { NAVIGATION_CONFIG, type NavCategory } from "../../constants/navigationConfig";
 
 const CATEGORIES = NAVIGATION_CONFIG;
-const ARCHIVE_SITE_URL = "https://insideinseadjp.blogspot.com/";
+const ARCHIVE_SITE_URL = "https://insideinseadjp-pre2025.blogspot.com/";
 
 function normalizePath(path: string): string {
   return path.replace(/\/$/, "") || "/";
