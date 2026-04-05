@@ -24,6 +24,11 @@ const notoSerifJP = Noto_Serif_JP({
 export const metadata: Metadata = {
   title: "INSIDE INSEAD",
   description: "INSIDE INSEAD - INSEAD 日本人向け非公式コミュニティサイト",
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    shortcut: [{ url: "/icon.png", type: "image/png" }],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {

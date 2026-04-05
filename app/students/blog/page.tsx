@@ -14,8 +14,7 @@ import { Suspense } from "react";
 
 export const revalidate = 0;
 
-const HERO_IMAGE_URL =
-  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop";
+const HERO_IMAGE_URL = "/images/students-blog-hero.png";
 
 export default async function StudentsBlogPage() {
   const category = getCategoryByPath("/students");

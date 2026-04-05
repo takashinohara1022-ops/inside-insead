@@ -4,8 +4,7 @@ import Pagination from "../../../components/Pagination";
 import { fetchPageMainContent } from "../../../lib/pageContentDocs";
 import { PageMarkdownContent } from "../../_components/PageMarkdownContent";
 
-const HERO_IMAGE_URL =
-  "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop";
+const HERO_IMAGE_URL = "/images/about-exchange-hero.png";
 
 export default async function AboutExchangePage() {
   const section = getAboutSection("exchange");
@@ -16,7 +15,7 @@ export default async function AboutExchangePage() {
     <div className="min-h-screen bg-stone-50 text-slate-900">
       <PageHero
         src={HERO_IMAGE_URL}
-        alt="グローバルな学びの場"
+        alt="ペンシルバニア大学キャンパス（秋の並木道）"
         title={section.title}
       />
 

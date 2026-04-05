@@ -76,7 +76,7 @@ export default async function Home() {
           <div className="relative h-[58svh] min-h-[22rem] w-full max-w-[100vw] overflow-hidden sm:h-[64vh] sm:min-h-[28rem] lg:h-[72vh] lg:max-h-[42rem]">
             <Image
               src="/images/home-hero-fontainebleau.png"
-              alt="INSEAD フォンテンブローキャンパス"
+              alt="夕暮れのフォンテーヌブロー城正面。照明に照らされた石畳と整列した樹木"
               fill
               className="object-cover object-[62%_center] md:object-center"
               sizes="100vw"

@@ -5,8 +5,7 @@ import { PageHero } from "../_components/PageHero";
 import Pagination from "../../components/Pagination";
 import { fetchPageMainContent, markdownToPlainText } from "../../lib/pageContentDocs";
 
-const HERO_IMAGE_URL =
-  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop";
+const HERO_IMAGE_URL = "/images/student-life-hero.png"; // Fontainebleau palace
 
 const SECTION_HEADING_CLASS =
   "text-lg font-semibold tracking-tight text-slate-900 sm:text-xl transition-colors hover:text-[#005543]";
@@ -47,7 +46,7 @@ export default async function StudentLifePage() {
     <div className="min-h-screen bg-stone-50 text-slate-900">
       <PageHero
         src={HERO_IMAGE_URL}
-        alt="学生が教室やキャンパスで議論・談笑している様子"
+        alt="フォンテーヌブロー城とその庭園の空撮。池と整備された庭が広がる"
         title={category.label}
       />
 

@@ -5,8 +5,7 @@ import { PageHero } from "../_components/PageHero";
 import Pagination from "../../components/Pagination";
 import { fetchPageMainContent, markdownToPlainText, normalizeDocBody } from "../../lib/pageContentDocs";
 
-const HERO_IMAGE_URL =
-  "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop";
+const HERO_IMAGE_URL = "/images/about-insead-overview-hero.png";
 
 const SECTION_HEADING_CLASS =
   "text-lg font-semibold tracking-tight text-slate-900 sm:text-xl transition-colors hover:text-[#005543]";
@@ -65,7 +64,7 @@ export default async function AboutOverviewPage() {
     <div className="min-h-screen bg-stone-50 text-slate-900">
       <PageHero
         src={HERO_IMAGE_URL}
-        alt="フォンテーヌブロー風の歴史的建物"
+        alt="INSEAD キャンパスの中庭（夕暮れの照明とヤシの木）"
         title={category.label}
       />
 
