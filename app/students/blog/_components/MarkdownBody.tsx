@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import type { Components } from "react-markdown";
+import { ensureGfmTableDelimiters } from "../../../../lib/blogMarkdownGfmPrep";
 import { extractDriveFileId, toDriveProxyUrl } from "../../../../lib/studentsBlog";
 
 /**
@@ -62,7 +64,7 @@ function SafeMarkdownImage({
       src={currentSrc}
       alt={alt ?? ""}
       title={title ?? undefined}
-      className="my-3 w-3/4 rounded-lg border border-neutral-200 object-contain"
+      className="my-3 w-full max-w-full rounded-lg border border-neutral-200 object-contain"
       loading="lazy"
       onError={() => {
         if (fallbackIndex < candidates.length - 1) {
@@ -75,6 +77,21 @@ function SafeMarkdownImage({
   );
 }
 
+const tableCell =
+  (Tag: "th" | "td") =>
+  ({ children }: { children?: ReactNode }) =>
+    (
+      <Tag
+        className={
+          Tag === "th"
+            ? "min-w-32 break-words border border-neutral-200 px-4 py-2 text-left align-top text-sm font-semibold text-slate-900"
+            : "min-w-32 break-words border border-neutral-200 px-4 py-2 text-left align-top text-slate-800"
+        }
+      >
+        {children}
+      </Tag>
+    );
+
 const markdownComponents: Components = {
   img: ({ src, alt, title }) => (
     <SafeMarkdownImage
@@ -83,6 +100,18 @@ const markdownComponents: Components = {
       title={typeof title === "string" ? title : undefined}
     />
   ),
+  table: ({ children }) => (
+    <div className="my-4 w-full max-w-full overflow-x-auto">
+      <table className="w-max min-w-full border-collapse border border-neutral-200 text-sm">
+        {children}
+      </table>
+    </div>
+  ),
+  thead: ({ children }) => <thead className="bg-slate-50">{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr>{children}</tr>,
+  th: tableCell("th"),
+  td: tableCell("td"),
 };
 
 type MarkdownBodyProps = {
@@ -102,15 +131,17 @@ export function MarkdownBody({ content, className = "" }: MarkdownBodyProps) {
     return null;
   }
 
+  const prepared = ensureGfmTableDelimiters(content);
+
   return (
     <div
-      className={`prose prose-slate max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-[#005543] prose-a:no-underline hover:prose-a:underline prose-img:mx-auto prose-img:w-3/4 ${className}`}
+      className={`prose prose-slate max-w-none prose-sm sm:prose-base prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-[#005543] prose-a:no-underline hover:prose-a:underline prose-img:mx-auto prose-img:max-w-full prose-img:w-auto prose-table:my-0 ${className}`}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         components={markdownComponents}
       >
-        {content}
+        {prepared}
       </ReactMarkdown>
     </div>
   );

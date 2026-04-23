@@ -6,10 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   type BlogPost,
   type MediaSource,
+  blogPostHasCoverMedia,
   getMediaSources,
   parseBlogDate,
   toDriveProxyUrl,
 } from "../../../../lib/studentsBlog";
+import { BlogTileBodyExcerpt } from "./BlogTileBodyExcerpt";
 import { LikeButton } from "./LikeButton";
 import { MarkdownBody } from "./MarkdownBody";
 
@@ -76,14 +78,32 @@ function MediaPreview({
   post,
   className,
   showAll = false,
+  variant = "card",
 }: {
   post: BlogPost;
   className?: string;
   showAll?: boolean;
+  variant?: "card" | "modal";
 }) {
   const mediaSources = getMediaSources(post);
-  const renderSource = (media: MediaSource, index: number, overrideClassName?: string) => {
-    const appliedClass = overrideClassName ?? className;
+
+  const youtubeClass =
+    className ?? "aspect-video w-full rounded-lg border border-neutral-200";
+  const videoClass =
+    className ??
+    "aspect-video w-full rounded-lg border border-neutral-200 bg-black";
+  const imageClass =
+    className ??
+    (variant === "modal"
+      ? "max-h-[min(50vh,32rem)] w-full rounded-lg border border-neutral-200 bg-neutral-50 object-contain"
+      : "aspect-video w-full rounded-lg border border-neutral-200 object-cover");
+  const placeholderClass =
+    className ??
+    (variant === "modal"
+      ? "flex min-h-[10rem] w-full items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-sm text-slate-500"
+      : "flex aspect-video w-full items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-sm text-slate-500");
+
+  const renderSource = (media: MediaSource, index: number) => {
     const key = `${media.kind}-${media.src ?? "none"}-${index}`;
     if (media.kind === "youtube" && media.src) {
       return (
@@ -93,18 +113,14 @@ function MediaPreview({
           title={`${post.title}-${index}`}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
-          className={appliedClass ?? "aspect-video w-full rounded-lg border border-neutral-200"}
+          className={youtubeClass}
         />
       );
     }
 
     if (media.kind === "video" && media.src) {
       return (
-        <video
-          key={key}
-          controls
-          className={appliedClass ?? "aspect-video w-full rounded-lg border border-neutral-200 bg-black"}
-        >
+        <video key={key} controls className={videoClass}>
           <source src={media.src} />
         </video>
       );
@@ -117,33 +133,18 @@ function MediaPreview({
             key={key}
             fileId={media.driveFileId}
             alt={post.title}
-            className={
-              appliedClass ?? "aspect-video w-full rounded-lg border border-neutral-200 object-cover"
-            }
+            className={imageClass}
           />
         );
       }
       return (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          key={key}
-          src={media.src}
-          alt={post.title}
-          className={
-            appliedClass ?? "aspect-video w-full rounded-lg border border-neutral-200 object-cover"
-          }
-        />
+        <img key={key} src={media.src} alt={post.title} className={imageClass} />
       );
     }
 
     return (
-      <div
-        key={key}
-        className={
-          appliedClass ??
-          "flex aspect-video w-full items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-sm text-slate-500"
-        }
-      >
+      <div key={key} className={placeholderClass}>
         メディアなし
       </div>
     );
@@ -154,16 +155,10 @@ function MediaPreview({
     if (!first) return null;
     return (
       <div className="space-y-3">
-        {renderSource(first, 0, "aspect-video w-full rounded-lg border border-neutral-200 object-cover")}
+        {renderSource(first, 0)}
         {rest.length > 0 ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {rest.map((media, index) =>
-              renderSource(
-                media,
-                index + 1,
-                "aspect-video w-full rounded-lg border border-neutral-200 object-cover",
-              ),
-            )}
+            {rest.map((media, index) => renderSource(media, index + 1))}
           </div>
         ) : null}
       </div>
@@ -390,7 +385,7 @@ export function StudentsBlogBoard({
           <p className="text-sm text-slate-600">
             {filteredPosts.length}件 / 全{posts.length}件
           </p>
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
             {filteredPosts.map((post) => (
               <div
                 key={post.id}
@@ -404,21 +399,27 @@ export function StudentsBlogBoard({
                     setSelectedPostId(post.id);
                   }
                 }}
-                className={`group cursor-pointer rounded-xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                className={`group flex h-full min-h-0 cursor-pointer flex-col rounded-xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                   highlightedPostId === post.id
                     ? "border-[#005543] ring-2 ring-[#005543]/30"
                     : "border-neutral-200"
                 }`}
               >
-                <div className="relative">
-                  <MediaPreview post={post} />
-                  {getMediaSources(post).filter((m) => m.kind !== "none").length > 1 ? (
-                    <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] text-white">
-                      +{getMediaSources(post).filter((m) => m.kind !== "none").length - 1}
-                    </span>
-                  ) : null}
-                </div>
-                <h3 className="mt-4 line-clamp-2 text-lg font-semibold tracking-tight text-slate-900">
+                {blogPostHasCoverMedia(post) ? (
+                  <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50">
+                    <MediaPreview post={post} />
+                    {getMediaSources(post).filter((m) => m.kind !== "none").length > 1 ? (
+                      <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] text-white">
+                        +{getMediaSources(post).filter((m) => m.kind !== "none").length - 1}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+                <h3
+                  className={`line-clamp-2 text-lg font-semibold tracking-tight text-slate-900 ${
+                    blogPostHasCoverMedia(post) ? "mt-4" : "mt-0"
+                  }`}
+                >
                   {post.title}
                 </h3>
                 <p className="mt-1 text-xs text-slate-500">{formatDate(post.postedAt)}</p>
@@ -429,10 +430,19 @@ export function StudentsBlogBoard({
                     authorProfileHrefMap={authorProfileHrefMap}
                   />
                 </p>
-                <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-700">
-                  {post.body.replace(/#{1,6}\s/g, "").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\n+/g, " ").trim() || post.body}
-                </p>
-                <div className="mt-3 space-y-2">
+                {blogPostHasCoverMedia(post) ? (
+                  <BlogTileBodyExcerpt body={post.body} lineClamp={3} className="mt-3" />
+                ) : (
+                  <div className="mt-3 flex min-h-[12rem] flex-1 flex-col">
+                    <BlogTileBodyExcerpt
+                      body={post.body}
+                      lineClamp={14}
+                      placeholderWhenEmpty
+                      className="h-full min-h-0 flex-1"
+                    />
+                  </div>
+                )}
+                <div className="mt-auto space-y-2 pt-3">
                   <div className="flex flex-wrap gap-1.5">
                     {post.hashtags.map((tag) => (
                       <span
@@ -470,12 +480,12 @@ export function StudentsBlogBoard({
           onClick={closeModal}
         >
           <div
-            className="max-h-[min(92vh,100dvh-1rem)] w-full min-w-0 overflow-y-auto rounded-xl bg-white p-4 shadow-2xl sm:p-6 md:p-8 lg:p-10"
+            className="max-h-[min(92vh,100dvh-1rem)] w-full max-w-5xl min-w-0 overflow-y-auto rounded-xl bg-white p-4 shadow-2xl sm:p-6 md:p-8 lg:p-8"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl lg:text-3xl">
+                <h3 className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl md:text-2xl">
                   {selectedPost.title}
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
@@ -495,11 +505,9 @@ export function StudentsBlogBoard({
                 閉じる
               </button>
             </div>
-            <MediaPreview
-              post={selectedPost}
-              showAll
-              className="aspect-video w-full rounded-lg border border-neutral-200 object-cover"
-            />
+            {blogPostHasCoverMedia(selectedPost) ? (
+              <MediaPreview post={selectedPost} showAll variant="modal" />
+            ) : null}
             <div className="mt-4 flex flex-wrap gap-2">
               {selectedPost.hashtags.map((tag) => (
                 <span
@@ -510,7 +518,7 @@ export function StudentsBlogBoard({
                 </span>
               ))}
             </div>
-            <div className="mt-4 text-base leading-relaxed">
+            <div className="mt-4">
               <MarkdownBody content={selectedPost.body} />
             </div>
             <div className="mt-4 flex justify-start">

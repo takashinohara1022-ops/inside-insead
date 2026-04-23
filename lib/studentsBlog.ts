@@ -210,6 +210,10 @@ export function getMediaSources(post: BlogPost): MediaSource[] {
   return [{ kind: "none" }];
 }
 
+export function blogPostHasCoverMedia(post: BlogPost): boolean {
+  return getMediaSources(post).some((m) => m.kind !== "none");
+}
+
 export function getCardBackgroundImage(post: BlogPost): string | null {
   const media = getMediaSources(post)[0];
   if (!media) return null;
