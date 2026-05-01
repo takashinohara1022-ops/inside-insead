@@ -49,22 +49,30 @@ function SafeMarkdownImage({
       : [];
 
   const currentSrc = candidates[fallbackIndex];
+  const caption = (alt ?? "").trim();
 
   if (!currentSrc || error) {
     return (
-      <span className="my-2 inline-block rounded border border-dashed border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-slate-500">
-        画像を表示できません
+      <span className="my-3 block w-full max-w-full">
+        <span className="inline-block rounded border border-dashed border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-slate-500">
+          画像を表示できません
+        </span>
+        {caption ? (
+          <span className="mt-2 block text-center text-sm text-slate-500">{caption}</span>
+        ) : null}
       </span>
     );
   }
 
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
+  const imageBaseClass =
+    "w-full max-w-full rounded-lg border border-neutral-200 object-contain";
+  // eslint-disable-next-line @next/next/no-img-element
+  const imgEl = (
     <img
       src={currentSrc}
       alt={alt ?? ""}
       title={title ?? undefined}
-      className="my-3 w-full max-w-full rounded-lg border border-neutral-200 object-contain"
+      className={caption ? `my-0 ${imageBaseClass}` : `my-3 ${imageBaseClass}`}
       loading="lazy"
       onError={() => {
         if (fallbackIndex < candidates.length - 1) {
@@ -75,6 +83,17 @@ function SafeMarkdownImage({
       }}
     />
   );
+
+  if (caption) {
+    return (
+      <figure className="my-3 mx-auto max-w-full">
+        {imgEl}
+        <figcaption className="mt-2 text-center text-sm text-slate-500">{caption}</figcaption>
+      </figure>
+    );
+  }
+
+  return imgEl;
 }
 
 const tableCell =
@@ -135,7 +154,7 @@ export function MarkdownBody({ content, className = "" }: MarkdownBodyProps) {
 
   return (
     <div
-      className={`prose prose-slate max-w-none prose-sm sm:prose-base prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-[#005543] prose-a:no-underline hover:prose-a:underline prose-img:mx-auto prose-img:max-w-full prose-img:w-auto prose-table:my-0 ${className}`}
+      className={`prose prose-slate max-w-none prose-sm sm:prose-base prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-[#005543] prose-a:no-underline hover:prose-a:underline prose-img:mx-auto prose-img:max-w-full prose-img:w-auto prose-figure:mx-auto prose-figure:max-w-full prose-table:my-0 ${className}`}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
