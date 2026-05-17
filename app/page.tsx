@@ -104,7 +104,7 @@ export default async function Home() {
                       "0 2px 4px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.4), 0 0 1px rgba(0,0,0,0.5)",
                   }}
                 >
-                  The Business School for the World.
+                  The Business School<br />for the World
                 </h1>
                 <div className="mt-10 flex flex-col gap-4 sm:mt-12 sm:flex-row sm:items-center">
                   <Link
