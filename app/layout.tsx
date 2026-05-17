@@ -21,9 +21,32 @@ const notoSerifJP = Noto_Serif_JP({
   weight: ["400", "500", "600"],
 });
 
+const SITE_NAME = "INSEAD非公式日本人在校生サイト";
+const SITE_URL = "https://inside-insead.vercel.app";
+const SITE_DESCRIPTION =
+  "INSEAD非公式日本人在校生サイト - INSEAD 日本人向け非公式コミュニティサイト";
+
 export const metadata: Metadata = {
-  title: "INSIDE INSEAD",
-  description: "INSIDE INSEAD - INSEAD 日本人向け非公式コミュニティサイト",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    siteName: SITE_NAME,
+    locale: "ja_JP",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
   icons: {
     icon: [{ url: "/icon.png", type: "image/png" }],
     shortcut: [{ url: "/icon.png", type: "image/png" }],
@@ -37,6 +60,16 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+// Google 検索結果でのサイト名表示を制御するための構造化データ (JSON-LD)
+// https://developers.google.com/search/docs/appearance/site-names
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  alternateName: "INSIDE INSEAD",
+  url: SITE_URL,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -44,6 +77,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteJsonLd),
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${notoSerifJP.variable} flex min-h-screen flex-col antialiased overflow-x-hidden`}
       >
