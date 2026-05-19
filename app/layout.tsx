@@ -9,37 +9,38 @@ const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
-
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
 const notoSerifJP = Noto_Serif_JP({
   variable: "--font-noto-serif-jp",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
 
-const SITE_NAME = "INSEAD非公式日本人在校生サイト";
+// ★ここから変更
+const SITE_BRAND = "INSIDE INSEAD";                  // ①サイト名（小さい表示）
+const SITE_NAME = "INSEAD日本人在校生サイト";          // ②ページタイトル（青リンク）
 const SITE_URL = "https://inside-insead.vercel.app";
 const SITE_DESCRIPTION =
   "INSEAD非公式日本人在校生サイト - INSEAD 日本人向け非公式コミュニティサイト";
+// ★ここまで変更
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: SITE_NAME,
+    default: SITE_NAME,                              // ②に表示される
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
-  applicationName: SITE_NAME,
+  applicationName: SITE_BRAND,                       // ★変更：ブランド名に
   openGraph: {
     type: "website",
     url: SITE_URL,
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    siteName: SITE_NAME,
+    siteName: SITE_BRAND,                            // ★変更：①に効く
     locale: "ja_JP",
   },
   twitter: {
@@ -65,8 +66,8 @@ export const viewport: Viewport = {
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: SITE_NAME,
-  alternateName: "INSIDE INSEAD",
+  name: SITE_BRAND,                                  // ★変更：①に最も効く
+  alternateName: SITE_NAME,                          // ★変更：別名として登録
   url: SITE_URL,
 };
 
