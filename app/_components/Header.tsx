@@ -167,7 +167,7 @@ function DrawerNavList({
         </div>
       ))}
       <div className="px-4 pt-4 pb-2">
-        <a
+        
           href={ARCHIVE_SITE_URL}
           target="_blank"
           rel="noopener noreferrer"
@@ -225,7 +225,7 @@ export function Header() {
               />
             </span>
             <span className="truncate font-[var(--font-noto-serif-jp)] text-xs font-medium tracking-wide text-slate-600">
-              INSEAD日本人サイト(非公式)
+              INSIDE INSEAD
             </span>
           </Link>
         </div>
@@ -257,7 +257,7 @@ export function Header() {
                 href="/"
                 className="min-w-0 truncate whitespace-nowrap font-[var(--font-noto-serif-jp)] text-sm font-medium tracking-wide text-slate-600"
               >
-                INSEAD日本人サイト(非公式)
+                INSIDE INSEAD
               </Link>
               <Link
                 href={coffeeChatHref}
@@ -271,7 +271,7 @@ export function Header() {
               {CATEGORIES.map((category) => (
                 <DesktopCategoryDropdown key={category.path} category={category} pathname={pathname} />
               ))}
-              <a
+              
                 href={ARCHIVE_SITE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
