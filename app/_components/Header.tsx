@@ -167,7 +167,7 @@ function DrawerNavList({
         </div>
       ))}
       <div className="px-4 pt-4 pb-2">
-        
+        <a
           href={ARCHIVE_SITE_URL}
           target="_blank"
           rel="noopener noreferrer"
@@ -271,7 +271,7 @@ export function Header() {
               {CATEGORIES.map((category) => (
                 <DesktopCategoryDropdown key={category.path} category={category} pathname={pathname} />
               ))}
-              
+              <a
                 href={ARCHIVE_SITE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
