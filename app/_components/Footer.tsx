@@ -131,7 +131,7 @@ export function Footer() {
               <span className="inline-flex items-center justify-center rounded-full bg-white/10 p-2">
                 <Image
                   src="/images/insead-official-logo.png"
-                  alt="INSEAD"
+                  alt="INSIDE INSEAD"
                   width={48}
                   height={48}
                   className="h-10 w-10 object-contain"
@@ -155,7 +155,7 @@ export function Footer() {
               </p>
               <ul className="space-y-2 text-sm text-white/80">
                 <li>
-                  <a
+                  
                     href="https://www.insead.edu/"
                     target="_blank"
                     rel="noreferrer"
@@ -166,7 +166,7 @@ export function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a
+                  
                     href={ARCHIVE_SITE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -189,4 +189,3 @@ export function Footer() {
     </footer>
   );
 }
-
