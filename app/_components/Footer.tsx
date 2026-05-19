@@ -155,7 +155,7 @@ export function Footer() {
               </p>
               <ul className="space-y-2 text-sm text-white/80">
                 <li>
-                  
+                  <a                  
                     href="https://www.insead.edu/"
                     target="_blank"
                     rel="noreferrer"
@@ -166,7 +166,7 @@ export function Footer() {
                   </a>
                 </li>
                 <li>
-                  
+                  <a
                     href={ARCHIVE_SITE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
