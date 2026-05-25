@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { SheetRow } from "../../../../lib/googleData";
 
 // ===== 型定義 =====
@@ -351,14 +352,19 @@ function ReportAccordion({ report }: { report: AdmissionReport }) {
 function ReportRow({
   report,
   isExpanded,
+  isHighlighted,
   onToggle,
 }: {
   report: AdmissionReport;
   isExpanded: boolean;
+  isHighlighted: boolean;
   onToggle: () => void;
 }) {
   return (
-    <div>
+    <div
+      id={`report-row-${report.id}`}
+      className={`scroll-mt-24 transition ${isHighlighted ? "border-l-2 border-l-[#005543] bg-emerald-50/50" : ""}`}
+    >
       {/* メイン行 — 開閉によらず常に同じ見た目 */}
       <div
         role="button"
@@ -572,6 +578,7 @@ export function AdmissionReportsBoard({
   reportRows: SheetRow[];
   profileRows: SheetRow[];
 }) {
+  const searchParams = useSearchParams();
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [selectedClassLabels, setSelectedClassLabels] = useState<string[]>([]);
   const [selectedSponsors, setSelectedSponsors] = useState<string[]>([]);
@@ -587,6 +594,24 @@ export function AdmissionReportsBoard({
     () => buildAdmissionReports(reportRows, profileRows),
     [reportRows, profileRows]
   );
+
+  const targetAuthor = searchParams.get("author") ?? "";
+  const [highlightedReportId, setHighlightedReportId] = useState("");
+  useEffect(() => {
+    if (!targetAuthor || reports.length === 0) return;
+    const targetKey = normalizeJoinKey(targetAuthor);
+    const matched = reports.find(
+      (r) => normalizeJoinKey(r.authorId) === targetKey
+    );
+    if (!matched) return;
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(`report-row-${matched.id}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightedReportId(matched.id);
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [targetAuthor, reports]);
 
   const filteredReports = useMemo(() => {
     let result = reports;
@@ -677,6 +702,7 @@ export function AdmissionReportsBoard({
             key={report.id}
             report={report}
             isExpanded={expandedRowId === report.id}
+            isHighlighted={highlightedReportId === report.id}
             onToggle={() =>
               setExpandedRowId((prev) =>
                 prev === report.id ? null : report.id

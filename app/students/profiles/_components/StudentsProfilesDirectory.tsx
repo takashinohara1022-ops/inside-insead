@@ -24,6 +24,11 @@ type StudentGalleryPost = {
   author: string;
 };
 
+type StudentAdmissionPost = {
+  id: string;
+  author: string;
+};
+
 type CoffeeChatAvailability = {
   isOpen: boolean;
 };
@@ -485,6 +490,7 @@ function ProfileCard({
   coffeeChatAvailability,
   relatedBlogPosts,
   relatedGalleryPosts,
+  relatedAdmissionPosts,
   isHighlighted,
 }: {
   profile: StudentProfile;
@@ -493,6 +499,7 @@ function ProfileCard({
   coffeeChatAvailability: CoffeeChatAvailability;
   relatedBlogPosts: StudentBlogPost[];
   relatedGalleryPosts: StudentGalleryPost[];
+  relatedAdmissionPosts: StudentAdmissionPost[];
   isHighlighted: boolean;
 }) {
   const [accordionState, setAccordionState] = useState<Record<AccordionKey, boolean>>({
@@ -714,7 +721,7 @@ function ProfileCard({
           open={accordionState.blog}
           onToggle={() => toggleAccordion("blog")}
         >
-          {relatedBlogPosts.length === 0 && relatedGalleryPosts.length === 0 ? (
+          {relatedBlogPosts.length === 0 && relatedGalleryPosts.length === 0 && relatedAdmissionPosts.length === 0 ? (
             <p className="text-sm text-slate-600">この在校生の投稿はまだありません。</p>
           ) : (
             <ul className="space-y-2">
@@ -744,6 +751,19 @@ function ProfileCard({
                   </Link>
                 </li>
               ))}
+              {relatedAdmissionPosts.map((item) => (
+                <li key={`${profile.id}-admission-${item.id}`} className="flex items-start gap-2">
+                  <span className="inline-flex rounded bg-rose-200 px-2 py-0.5 text-[11px] font-semibold text-rose-900">
+                    合格体験記
+                  </span>
+                  <Link
+                    href={`/students/admission?author=${encodeURIComponent(item.author)}`}
+                    className="text-sm text-[#005543] underline-offset-2 transition hover:underline"
+                  >
+                    合格体験記
+                  </Link>
+                </li>
+              ))}
             </ul>
           )}
         </AccordionSection>
@@ -765,10 +785,12 @@ export function StudentsProfilesDirectory({
   rows,
   blogPosts,
   galleryPosts,
+  admissionPosts = [],
 }: {
   rows: SheetRow[];
   blogPosts: StudentBlogPost[];
   galleryPosts: StudentGalleryPost[];
+  admissionPosts?: StudentAdmissionPost[];
 }) {
   const searchParams = useSearchParams();
   const sectionTopRef = useRef<HTMLDivElement | null>(null);
@@ -801,6 +823,14 @@ export function StudentsProfilesDirectory({
     });
     return map;
   }, [profiles, galleryPosts]);
+  const admissionPostsByProfileId = useMemo(() => {
+    const map = new Map<string, StudentAdmissionPost[]>();
+    profiles.forEach((profile) => {
+      const related = admissionPosts.filter((post) => matchesAuthor(profile, post.author));
+      map.set(profile.id, related);
+    });
+    return map;
+  }, [profiles, admissionPosts]);
 
   const yearTags = useMemo(() => {
     const map = new Map<string, Tag>();
@@ -1029,6 +1059,7 @@ export function StudentsProfilesDirectory({
                 onTagClick={handleTagClick}
                 relatedBlogPosts={blogPostsByProfileId.get(profile.id) ?? []}
                 relatedGalleryPosts={galleryPostsByProfileId.get(profile.id) ?? []}
+                relatedAdmissionPosts={admissionPostsByProfileId.get(profile.id) ?? []}
                 isHighlighted={highlightedProfileId === profile.id}
                 coffeeChatAvailability={
                   coffeeChatByProfileId.get(profile.id) ?? {
