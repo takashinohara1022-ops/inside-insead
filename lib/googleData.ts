@@ -138,7 +138,8 @@ function toSheetRows(values: string[][]): SheetRow[] {
   });
 }
 
-async function fetchSheetRows(sheetId: string): Promise<SheetRow[]> {
+async function fetchSheetRows(rawSheetId: string): Promise<SheetRow[]> {
+  const sheetId = normalizeSheetId(rawSheetId);
   const authHeaders = await getGoogleAuthHeader([
     "https://www.googleapis.com/auth/spreadsheets.readonly",
   ]);
