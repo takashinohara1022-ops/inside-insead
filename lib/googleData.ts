@@ -168,6 +168,10 @@ export async function getBlogSheetRows(): Promise<SheetRow[]> {
   return fetchSheetRows(getEnv("BLOG_SHEET_ID"));
 }
 
+export async function getAdmissionReportSheetRows(): Promise<SheetRow[]> {
+  return fetchSheetRows(getEnv("ADMISSION_SHEET_ID"));
+}
+
 /**
  * ギャラリー用フォーム投稿のスプレッドシート行を取得する。
  * 行オブジェクトには「アップロード者名」「日付」「写真コメント」等の列が含まれる想定。

@@ -124,6 +124,12 @@ export const NAVIGATION_CONFIG: NavCategory[] = [
         description:
           "出願、授業、生活、キャリアなど、在校生の一次情報を体験ベースで発信する記事を掲載しています。",
       },
+      {
+        path: "/students/admission",
+        title: "合格体験記",
+        description:
+          "実際にINSEADに合格した在校生の受験体験を、エッセイ・面接・スコア対策など項目別にまとめています。",
+      },
     ],
   },
   {
