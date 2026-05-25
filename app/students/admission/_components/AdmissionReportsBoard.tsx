@@ -40,7 +40,11 @@ type AdmissionItem = {
 const ADMISSION_SECTIONS: Array<{
   id: string;
   title: string;
-  items: Array<{ label: string; columnKeywords: string[] }>;
+  items: Array<{
+    label: string;
+    columnKeywords?: string[];
+    columnIndex?: number;
+  }>;
 }> = [
   {
     id: "profile",
@@ -80,10 +84,10 @@ const ADMISSION_SECTIONS: Array<{
     id: "aptitude-test",
     title: "5. 能力試験",
     items: [
-      { label: "選定理由", columnKeywords: ["能力試験 選定理由"] },
-      { label: "実績", columnKeywords: ["能力試験 実績"] },
-      { label: "学習方法", columnKeywords: ["能力試験 学習方法"] },
-      { label: "アドバイス", columnKeywords: ["能力試験 アドバイス"] },
+      { label: "選定理由", columnIndex: 13 }, // M列
+      { label: "実績", columnIndex: 14 }, // N列
+      { label: "学習方法", columnIndex: 15 }, // O列
+      { label: "アドバイス", columnIndex: 16 }, // P列
     ],
   },
   {
@@ -232,7 +236,12 @@ function buildAdmissionReports(
         items: sectionDef.items
           .map((itemDef) => ({
             label: itemDef.label,
-            value: getByHeaderMatch(row, itemDef.columnKeywords),
+            value:
+              typeof itemDef.columnIndex === "number"
+                ? getByColumnIndex(row, itemDef.columnIndex)
+                : itemDef.columnKeywords
+                  ? getByHeaderMatch(row, itemDef.columnKeywords)
+                  : "",
           }))
           .filter((item) => item.value && item.value !== "-"),
       })).filter((section) => section.items.length > 0);
