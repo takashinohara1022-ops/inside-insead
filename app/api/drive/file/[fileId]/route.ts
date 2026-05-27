@@ -26,7 +26,7 @@ export async function GET(
       headers: {
         Authorization: authHeader.Authorization,
       },
-      cache: "no-store",
+      next: { revalidate: 86400 }, // 24時間サーバー側キャッシュ
     },
   );
 
@@ -41,7 +41,7 @@ export async function GET(
     status: 200,
     headers: {
       "Content-Type": upstream.headers.get("content-type") ?? "application/octet-stream",
-      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+      "Cache-Control": "public, max-age=86400, s-maxage=2592000, stale-while-revalidate=2592000, immutable",
     },
   });
 }
