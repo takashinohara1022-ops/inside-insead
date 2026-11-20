@@ -8,12 +8,7 @@ import {
 } from "../../../lib/googleData";
 import { PageHero } from "../../_components/PageHero";
 
-export const revalidate = 300; // 5分キャッシュ（毎回のサーバー処理を防ぐ）
-
-// 空配列を返すと、各ページは初回アクセス時に生成されてキャッシュされる
-export async function generateStaticParams() {
-  return [];
-}
+export const revalidate = 0;
 
 const HERO_IMAGE_URL =
   "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop";

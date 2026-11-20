@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { PageHero } from "../_components/PageHero";
 import Pagination from "../../components/Pagination";
 import {
@@ -22,7 +21,7 @@ import { BlogGallery, type GalleryItem } from "./_components/BlogGallery";
 const HERO_IMAGE_URL = "/images/gallery-hero.png";
 const EMBEDDED_BLOG_IMAGE_FOLDER_ID = "1zsXGxjInn2WNFxO6_xuFgCOAEAPJ9fyV";
 
-export const revalidate = 300; // 5分キャッシュ（毎回のサーバー処理を防ぐ）
+export const revalidate = 0;
 
 function formatUploadDate(createdTime?: string): string {
   if (!createdTime) return "-";
@@ -307,9 +306,7 @@ export default async function GalleryPage() {
         <p className="mb-6 leading-relaxed text-slate-600 sm:text-[15px]">
           投稿された写真を一覧表示しています。各写真に貼付けられたリンクから投稿者プロフィールやBlog投稿元へ遷移することができます。
         </p>
-        <Suspense fallback={null}>
-          <BlogGallery items={galleryItems} authorProfileHrefMap={authorProfileHrefMap} />
-        </Suspense>
+        <BlogGallery items={galleryItems} authorProfileHrefMap={authorProfileHrefMap} />
         <Pagination />
       </div>
     </div>

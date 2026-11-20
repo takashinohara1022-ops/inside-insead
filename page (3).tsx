@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Pagination from "../../../components/Pagination";
 import { AdmissionReportsBoard } from "./_components/AdmissionReportsBoard";
 import {
@@ -6,7 +5,7 @@ import {
   getProfileSheetRows,
 } from "../../../lib/googleData";
 
-export const revalidate = 300; // 5分キャッシュ（毎回のサーバー処理を防ぐ）
+export const revalidate = 0;
 
 export default async function StudentsAdmissionPage() {
   const [reportRows, profileRows] = await Promise.all([
@@ -25,12 +24,10 @@ export default async function StudentsAdmissionPage() {
             実際にINSEADに合格した在校生の受験体験を、エッセイ・面接・スコア対策など項目別にまとめています。
           </p>
         </header>
-        <Suspense fallback={null}>
-          <AdmissionReportsBoard
-            reportRows={reportRows}
-            profileRows={profileRows}
-          />
-        </Suspense>
+        <AdmissionReportsBoard
+          reportRows={reportRows}
+          profileRows={profileRows}
+        />
         <Pagination />
       </div>
     </div>

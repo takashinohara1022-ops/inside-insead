@@ -146,7 +146,7 @@ async function fetchSheetRows(rawSheetId: string): Promise<SheetRow[]> {
   const serviceAccountEmail = process.env.GOOGLE_CLIENT_EMAIL?.trim() ?? "unknown";
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A:ZZ`;
   const response = await fetch(url, {
-    next: { revalidate: 300, tags: ["google-data"] },
+    cache: "no-store",
     headers: authHeaders,
   });
   if (!response.ok) {
@@ -193,7 +193,7 @@ async function getDriveFilesByFolderId(folderId: string): Promise<DriveImageFile
   const pageSize = 1000;
   const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=${pageSize}`;
   const response = await fetch(url, {
-    next: { revalidate: 300, tags: ["google-data"] },
+    cache: "no-store",
     headers: authHeaders,
   });
   if (!response.ok) {

@@ -30,15 +30,7 @@ function getServiceAccountCredentials() {
   return { clientEmail, privateKey };
 }
 
-// アクセストークンをスコープごとに使い回す（毎回の署名処理でCPUを使わないため）
-const tokenCache = new Map<string, { token: string; expiresAt: number }>();
-
 export async function getGoogleAuthHeader(scopes: string[]): Promise<Record<string, string>> {
-  const cacheKey = [...scopes].sort().join(" ");
-  const cached = tokenCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    return { Authorization: `Bearer ${cached.token}` };
-  }
   const credentials = getServiceAccountCredentials();
   const auth = new google.auth.GoogleAuth({
     credentials: {
@@ -55,8 +47,6 @@ export async function getGoogleAuthHeader(scopes: string[]): Promise<Record<stri
         ? tokenResponse
         : (tokenResponse as { token?: string }).token;
   if (!accessToken) throw new Error("Failed to authorize service account");
-  // Googleのトークンは1時間有効。余裕を見て50分で更新する
-  tokenCache.set(cacheKey, { token: accessToken, expiresAt: Date.now() + 50 * 60 * 1000 });
   return {
     Authorization: `Bearer ${accessToken}`,
   };

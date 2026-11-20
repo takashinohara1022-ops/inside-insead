@@ -12,7 +12,7 @@ import {
 } from "../lib/googleData";
 import { parseBlogPosts } from "../lib/studentsBlog";
 
-export const revalidate = 300; // 5分キャッシュ（毎回のサーバー処理を防ぐ）
+export const revalidate = 0;
 
 async function safeGetProfileSheetRows(): Promise<SheetRow[]> {
   try {

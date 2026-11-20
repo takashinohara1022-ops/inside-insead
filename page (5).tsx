@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { PageHero } from "../../_components/PageHero";
 import Pagination from "../../../components/Pagination";
 import { StudentsProfilesDirectory } from "./_components/StudentsProfilesDirectory";
@@ -11,7 +10,7 @@ import {
 } from "../../../lib/googleData";
 import { parseBlogPosts } from "../../../lib/studentsBlog";
 
-export const revalidate = 300; // 5分キャッシュ（毎回のサーバー処理を防ぐ）
+export const revalidate = 0;
 
 const HERO_IMAGE_URL = "/images/students-profiles-hero.png";
 
@@ -43,9 +42,7 @@ export default async function StudentsProfilesPage() {
     <div className="min-h-screen bg-stone-50 text-slate-900">
       <PageHero src={HERO_IMAGE_URL} alt="フォンテーヌブロー宮殿の湖畔に建つ歴史的なパビリオン" title="在校生プロフィール一覧" />
       <div className="mx-auto max-w-6xl px-6 py-12 pb-14 sm:px-8 lg:px-12 lg:py-20">
-        <Suspense fallback={null}>
-          <StudentsProfilesDirectory rows={profileRows} blogPosts={blogPosts} galleryPosts={galleryPosts} admissionPosts={admissionPosts} />
-        </Suspense>
+        <StudentsProfilesDirectory rows={profileRows} blogPosts={blogPosts} galleryPosts={galleryPosts} admissionPosts={admissionPosts} />
         <Pagination />
       </div>
     </div>

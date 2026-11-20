@@ -12,7 +12,7 @@ import {
 import { parseBlogPosts } from "../../../lib/studentsBlog";
 import { Suspense } from "react";
 
-export const revalidate = 300; // 5分キャッシュ（毎回のサーバー処理を防ぐ）
+export const revalidate = 0;
 
 const HERO_IMAGE_URL = "/images/students-blog-hero.png";
 
